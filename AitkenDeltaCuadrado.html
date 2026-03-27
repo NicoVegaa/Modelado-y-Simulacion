@@ -1,0 +1,767 @@
+﻿<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Aitken - Proceso Delta-Cuadrado</title>
+    <style>
+      :root {
+        --bg: #0f1a2b;
+        --panel: #132238;
+        --grid: #1e3352;
+        --accent: #ffb703;
+        --accent-2: #fb8500;
+        --text: #e9f1ff;
+        --muted: #9fb5d1;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: radial-gradient(1200px 600px at 20% 10%, #1d2f4a, var(--bg));
+        color: var(--text);
+        font-family: "Trebuchet MS", "Segoe UI", Tahoma, sans-serif;
+      }
+
+      header {
+        padding: 18px 22px 6px 22px;
+      }
+
+      h1 {
+        margin: 0;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+      }
+
+      .sub {
+        margin-top: 6px;
+        color: var(--muted);
+      }
+
+      .wrap {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 16px;
+        padding: 14px 22px 24px 22px;
+      }
+
+      .panel {
+        background: linear-gradient(160deg, #162a46, #10233b);
+        border: 1px solid #1b3253;
+        border-radius: 12px;
+        padding: 14px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      }
+
+      .controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 12px;
+      }
+
+      label {
+        font-size: 13px;
+        color: var(--muted);
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      input,
+      select {
+        width: 100%;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid #294369;
+        background: #0f2036;
+        color: var(--text);
+      }
+
+      .btns {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      button {
+        padding: 9px 12px;
+        border-radius: 8px;
+        border: none;
+        background: var(--accent);
+        color: #1a1200;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      button.secondary {
+        background: #2a476f;
+        color: var(--text);
+      }
+
+      canvas {
+        width: 100%;
+        height: 440px;
+        background: #0b192c;
+        border-radius: 10px;
+        border: 1px solid #1b3253;
+      }
+
+      .legend {
+        margin-top: 10px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .table {
+        max-height: 440px;
+        overflow: auto;
+        border-radius: 10px;
+        border: 1px solid #1b3253;
+        margin-top: 10px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      th,
+      td {
+        padding: 8px 10px;
+        border-bottom: 1px solid #1b3253;
+        text-align: right;
+      }
+
+      th {
+        position: sticky;
+        top: 0;
+        background: #142742;
+        text-align: left;
+      }
+
+      .foot {
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .converter {
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px solid #1b3253;
+      }
+
+      .converter-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 12px;
+      }
+
+      .converter-field input {
+        width: 100%;
+      }
+
+      .error-box {
+        margin-top: 10px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 120, 120, 0.4);
+        background: rgba(120, 30, 30, 0.35);
+        color: #ffd6d6;
+        font-size: 13px;
+        display: none;
+      }
+
+      @media (max-width: 980px) {
+        .wrap {
+          grid-template-columns: 1fr;
+        }
+        canvas {
+          height: 360px;
+        }
+        .converter-row {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Proceso Delta-Cuadrado de Aitken</h1>
+      <div class="sub">Acelera la convergencia de un punto fijo usando tres iteraciones sucesivas.</div>
+    </header>
+
+    <div class="wrap">
+      <section class="panel">
+        <div class="controls">
+          <div>
+            <label for="ejemplo">Ejemplo</label>
+            <select id="ejemplo">
+              <option value="cos">g(x) = cos(x)</option>
+              <option value="x2">g(x) = (x + 2)^(1/3)</option>
+              <option value="custom">Personalizada</option>
+            </select>
+          </div>
+          <div>
+            <label for="gx">g(x)</label>
+            <input id="gx" value="Math.cos(x)" />
+          </div>
+          <div>
+            <label for="x0">x0</label>
+            <input id="x0" value="0.5" />
+          </div>
+          <div>
+            <label for="tol">tolerancia</label>
+            <input id="tol" value="1e-6" />
+          </div>
+          <div>
+            <label for="maxIter">max_iter</label>
+            <input id="maxIter" value="50" />
+          </div>
+          <div>
+            <label for="speed">velocidad (ms)</label>
+            <input id="speed" value="120" />
+          </div>
+        </div>
+        <div class="btns">
+          <button id="start">Iniciar</button>
+          <button id="stop" class="secondary">Pausar</button>
+          <button id="step" class="secondary">Paso</button>
+          <button id="expand" class="secondary">Agrandar tabla</button>
+          <button id="reset" class="secondary">Reiniciar</button>
+        </div>
+        <div id="errorBox" class="error-box" role="alert" aria-live="polite"></div>
+        <div class="converter">
+          <div class="converter-row">
+            <div class="converter-field">
+              <label for="textFunc">Texto a convertir (ej: ln(x) - 1)</label>
+              <input id="textFunc" placeholder="ln(x) - 1" />
+            </div>
+            <div class="converter-field">
+              <label for="jsFunc">Salida lista para g(x)</label>
+              <input id="jsFunc" readonly />
+            </div>
+          </div>
+          <div class="btns">
+            <button id="toGx" class="secondary">Usar como g(x)</button>
+            <button id="copyJs" class="secondary">Copiar salida</button>
+          </div>
+        </div>
+        <div class="legend">
+          Azul: secuencia x<sub>n</sub>. Naranja: Aitken x̂<sub>n</sub>. El error usa |x̂<sub>n</sub> - x<sub>n+2</sub>|.
+        </div>
+        <div class="foot">
+          Recomendado: g(x)=cos(x), x0=0.5.
+        </div>
+      </section>
+
+      <section class="panel">
+        <canvas id="plot" width="800" height="440"></canvas>
+        <div class="table">
+          <table>
+            <thead>
+              <tr>
+                <th>n</th>
+                <th>x_n</th>
+                <th>x_{n+1}</th>
+                <th>x_{n+2}</th>
+                <th>x̂_n</th>
+                <th>error</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("plot");
+      const ctx = canvas.getContext("2d");
+
+      const ejemplo = document.getElementById("ejemplo");
+      const gxInput = document.getElementById("gx");
+      const x0Input = document.getElementById("x0");
+      const tolInput = document.getElementById("tol");
+      const maxIterInput = document.getElementById("maxIter");
+      const speedInput = document.getElementById("speed");
+      const tbody = document.getElementById("tbody");
+
+      const startBtn = document.getElementById("start");
+      const stopBtn = document.getElementById("stop");
+      const stepBtn = document.getElementById("step");
+      const expandBtn = document.getElementById("expand");
+      const resetBtn = document.getElementById("reset");
+      const errorBox = document.getElementById("errorBox");
+      const textFunc = document.getElementById("textFunc");
+      const jsFunc = document.getElementById("jsFunc");
+      const toGxBtn = document.getElementById("toGx");
+      const copyJsBtn = document.getElementById("copyJs");
+
+      let timer = null;
+      let iter = 0;
+      let x = 0;
+      let seq = [];
+      let acc = [];
+      let cfg = null;
+
+      function setEjemplo() {
+        if (ejemplo.value === "cos") {
+          gxInput.value = "Math.cos(x)";
+          x0Input.value = "0.5";
+        } else if (ejemplo.value === "x2") {
+          gxInput.value = "Math.pow(x + 2, 1/3)";
+          x0Input.value = "1";
+        }
+      }
+
+      ejemplo.addEventListener("change", () => {
+        if (ejemplo.value !== "custom") setEjemplo();
+      });
+
+      function parseFunction(expr) {
+        return new Function("x", `return ${expr};`);
+      }
+
+      function normalizeExpr(expr) {
+        return expr.replace(/Math\.Math\./gi, "Math.");
+      }
+
+      function showError(msg) {
+        errorBox.textContent = msg;
+        errorBox.style.display = "block";
+      }
+
+      function clearError() {
+        errorBox.textContent = "";
+        errorBox.style.display = "none";
+      }
+
+      function resetState() {
+        iter = 0;
+        tbody.innerHTML = "";
+        seq = [];
+        acc = [];
+        x = parseFloat(x0Input.value);
+      }
+
+      function computeConfig() {
+        const gxExpr = normalizeExpr(gxInput.value);
+        gxInput.value = gxExpr;
+        try {
+          const g = parseFunction(gxExpr);
+          const tol = parseFloat(tolInput.value);
+          const maxIter = parseInt(maxIterInput.value, 10);
+          const speed = parseInt(speedInput.value, 10);
+          clearError();
+          return { g, tol, maxIter, speed };
+        } catch (err) {
+          showError(`Error en la función: ${err.message}`);
+          return null;
+        }
+      }
+
+      function getRange() {
+        const xs = [...seq, ...acc].filter((v) => Number.isFinite(v));
+        if (xs.length === 0) return { min: -1, max: 1 };
+        const min = Math.min(...xs) - 0.5;
+        const max = Math.max(...xs) + 0.5;
+        return { min, max };
+      }
+
+      function drawAxes() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#0b192c";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.strokeStyle = "#1e3352";
+        ctx.lineWidth = 1;
+
+        for (let i = 0; i <= 10; i++) {
+          const t = i / 10;
+          const y = t * canvas.height;
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(canvas.width, y);
+          ctx.stroke();
+        }
+        for (let i = 0; i <= 10; i++) {
+          const t = i / 10;
+          const xg = t * canvas.width;
+          ctx.beginPath();
+          ctx.moveTo(xg, 0);
+          ctx.lineTo(xg, canvas.height);
+          ctx.stroke();
+        }
+      }
+
+      function mapX(i, maxN) {
+        if (maxN <= 0) return 0;
+        return (i / maxN) * canvas.width;
+      }
+
+      function mapY(y, min, max) {
+        return canvas.height - ((y - min) / (max - min)) * canvas.height;
+      }
+
+      function drawSeries(values, color, min, max) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        const maxN = Math.max(values.length - 1, 1);
+        values.forEach((v, i) => {
+          if (!Number.isFinite(v)) return;
+          const px = mapX(i, maxN);
+          const py = mapY(v, min, max);
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        });
+        ctx.stroke();
+
+        values.forEach((v, i) => {
+          if (!Number.isFinite(v)) return;
+          const px = mapX(i, maxN);
+          const py = mapY(v, min, max);
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.arc(px, py, 3, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      }
+
+      function render() {
+        const { min, max } = getRange();
+        drawAxes();
+        if (seq.length > 0) {
+          try {
+            drawSeries(seq, "#4cc9f0", min, max);
+            clearError();
+          } catch (err) {
+            showError(`Error al dibujar: ${err.message}`);
+            stop();
+            return;
+          }
+        }
+        if (acc.length > 0) drawSeries(acc, "#ffb703", min, max);
+      }
+
+      function step() {
+        if (!cfg) return;
+        const { g, tol, maxIter } = cfg;
+
+        let x0 = x;
+        let x1;
+        let x2;
+        try {
+          x1 = g(x0);
+          x2 = g(x1);
+        } catch (err) {
+          showError(`Error al evaluar g(x): ${err.message}`);
+          stop();
+          return;
+        }
+        const denom = x2 - 2 * x1 + x0;
+        let xhat = NaN;
+        if (Math.abs(denom) > 1e-12) {
+          xhat = x0 - Math.pow(x1 - x0, 2) / denom;
+        }
+        const err = Number.isFinite(xhat) ? Math.abs(xhat - x2) : Math.abs(x2 - x1);
+
+        iter += 1;
+        seq.push(x0);
+        acc.push(xhat);
+
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>${iter}</td><td>${x0.toFixed(10)}</td><td>${x1.toFixed(
+          10
+        )}</td><td>${x2.toFixed(10)}</td><td>${
+          Number.isFinite(xhat) ? xhat.toFixed(10) : "-"
+        }</td><td>${err.toFixed(10)}</td>`;
+        tbody.appendChild(row);
+
+        render();
+
+        if (err < tol || iter >= maxIter) {
+          stop();
+        } else {
+          x = Number.isFinite(xhat) ? xhat : x1;
+        }
+      }
+
+      function start() {
+        cfg = computeConfig();
+        if (!cfg) return;
+        if (!timer) {
+          timer = setInterval(step, cfg.speed);
+        }
+      }
+
+      function stop() {
+        if (timer) {
+          clearInterval(timer);
+          timer = null;
+        }
+      }
+
+      function stepOnce() {
+        stop();
+        if (!cfg) cfg = computeConfig();
+        if (!cfg) return;
+        step();
+      }
+
+      function resetAll() {
+        stop();
+        resetState();
+        cfg = computeConfig();
+        if (!cfg) return;
+        render();
+      }
+
+      function openTableWindow() {
+        const w = window.open("", "_blank");
+        if (!w) return;
+        const doc = w.document;
+        doc.title = "Tabla Aitken";
+        const style = doc.createElement("style");
+        style.textContent =
+          "body { font-family: \"Trebuchet MS\", \"Segoe UI\", Tahoma, sans-serif; padding: 16px; }" +
+          "h1 { margin: 0 0 12px 0; }" +
+          "table { width: 100%; border-collapse: collapse; font-size: 13px; }" +
+          "th, td { padding: 8px 10px; border-bottom: 1px solid #ddd; text-align: right; }" +
+          "th { text-align: left; background: #f2f2f2; position: sticky; top: 0; }";
+        if (doc.head) doc.head.appendChild(style);
+
+        const h1 = doc.createElement("h1");
+        h1.textContent = "Tabla de valores - Aitken";
+        if (doc.body) doc.body.appendChild(h1);
+
+        const table = doc.createElement("table");
+        const thead = doc.createElement("thead");
+        thead.innerHTML = document.querySelector("thead").innerHTML;
+        const tbodyCopy = doc.createElement("tbody");
+        tbodyCopy.innerHTML = tbody.innerHTML;
+        table.appendChild(thead);
+        table.appendChild(tbodyCopy);
+        if (doc.body) doc.body.appendChild(table);
+      }
+
+      function convertTextToJs(text) {
+        let s = text.trim();
+        if (!s) return "";
+        s = s.replace(/,/g, ".");
+        s = s.replace(/\s+/g, "");
+        s = s.replace(/Math\.Math\./gi, "Math.");
+        s = s.replace(/Math\.log/gi, "__LOG__");
+        s = s.replace(/\bpi\b/gi, "Math.PI");
+        s = s.replace(/\be\b/gi, "Math.E");
+        s = s.replace(/\bln\b/gi, "Math.log");
+        s = s.replace(/\blog\b/gi, "Math.log");
+        s = s.replace(/\bexp\b/gi, "Math.exp");
+        s = s.replace(/\bsqrt\b/gi, "Math.sqrt");
+        s = s.replace(/\babs\b/gi, "Math.abs");
+        s = s.replace(/\bsin\b/gi, "Math.sin");
+        s = s.replace(/\bcos\b/gi, "Math.cos");
+        s = s.replace(/\btan\b/gi, "Math.tan");
+        s = s.replace(/__LOG__/g, "Math.log");
+        return s;
+      }
+
+      function addImplicitMultiplication(s) {
+        return s
+          .replace(/(\d)(x|Math\.|[A-Za-z_]\w*\()/g, "$1*$2")
+          .replace(/(x|\))(\d)/g, "$1*$2")
+          .replace(/(x|\))(Math\.|[A-Za-z_]\w*\()/g, "$1*$2")
+          .replace(/(\d)(\()/g, "$1*$2");
+      }
+
+      function tokenize(expr) {
+        const tokens = [];
+        let i = 0;
+        while (i < expr.length) {
+          const ch = expr[i];
+          if (/[0-9.]/.test(ch)) {
+            let j = i + 1;
+            while (j < expr.length && /[0-9.]/.test(expr[j])) j++;
+            tokens.push({ type: "num", value: expr.slice(i, j) });
+            i = j;
+            continue;
+          }
+          if (/[A-Za-z_]/.test(ch)) {
+            let j = i + 1;
+            while (j < expr.length && /[A-Za-z0-9_.]/.test(expr[j])) j++;
+            tokens.push({ type: "id", value: expr.slice(i, j) });
+            i = j;
+            continue;
+          }
+          if ("+-*/^()".includes(ch)) {
+            tokens.push({ type: "op", value: ch });
+            i += 1;
+            continue;
+          }
+          throw new Error(`Carácter inválido: ${ch}`);
+        }
+        return tokens;
+      }
+
+      function parseExpression(tokens) {
+        let pos = 0;
+        const peek = () => tokens[pos];
+        const next = () => tokens[pos++];
+
+        function parsePrimary() {
+          const t = next();
+          if (!t) throw new Error("Expresión incompleta");
+          if (t.type === "num") return { type: "num", value: parseFloat(t.value) };
+          if (t.type === "id") {
+            const name = t.value;
+            if (peek() && peek().type === "op" && peek().value === "(") {
+              next();
+              const arg = parseAddSub();
+              if (!peek() || peek().value !== ")") throw new Error("Falta ')'");
+              next();
+              return { type: "func", name, arg };
+            }
+            if (name.toLowerCase() === "x") return { type: "var" };
+            if (name.toLowerCase() === "math.pi" || name.toLowerCase() === "pi")
+              return { type: "const", name: "pi" };
+            if (name.toLowerCase() === "math.e" || name.toLowerCase() === "e")
+              return { type: "const", name: "e" };
+            return { type: "id", name };
+          }
+          if (t.type === "op" && t.value === "(") {
+            const expr = parseAddSub();
+            if (!peek() || peek().value !== ")") throw new Error("Falta ')'");
+            next();
+            return expr;
+          }
+          throw new Error("Token inesperado");
+        }
+
+        function parseUnary() {
+          if (peek() && peek().type === "op" && (peek().value === "+" || peek().value === "-")) {
+            const op = next().value;
+            const expr = parseUnary();
+            if (op === "-") return { type: "neg", arg: expr };
+            return expr;
+          }
+          return parsePower();
+        }
+
+        function parsePower() {
+          let left = parsePrimary();
+          if (peek() && peek().type === "op" && peek().value === "^") {
+            next();
+            const right = parsePower();
+            left = { type: "op", op: "^", left, right };
+          }
+          return left;
+        }
+
+        function parseMulDiv() {
+          let left = parseUnary();
+          while (peek() && peek().type === "op" && (peek().value === "*" || peek().value === "/")) {
+            const op = next().value;
+            const right = parseUnary();
+            left = { type: "op", op, left, right };
+          }
+          return left;
+        }
+
+        function parseAddSub() {
+          let left = parseMulDiv();
+          while (peek() && peek().type === "op" && (peek().value === "+" || peek().value === "-")) {
+            const op = next().value;
+            const right = parseMulDiv();
+            left = { type: "op", op, left, right };
+          }
+          return left;
+        }
+
+        const expr = parseAddSub();
+        if (pos < tokens.length) throw new Error("Token inesperado al final");
+        return expr;
+      }
+
+      function toJs(node) {
+        switch (node.type) {
+          case "num":
+            return Number.isFinite(node.value) ? String(node.value) : "NaN";
+          case "const":
+            return node.name === "pi" ? "Math.PI" : "Math.E";
+          case "var":
+            return "x";
+          case "id":
+            return node.name;
+          case "neg":
+            return `(-${toJs(node.arg)})`;
+          case "op": {
+            const a = toJs(node.left);
+            const b = toJs(node.right);
+            if (node.op === "^") return `Math.pow(${a}, ${b})`;
+            return `(${a} ${node.op} ${b})`;
+          }
+          case "func": {
+            const arg = toJs(node.arg);
+            const name = node.name.toLowerCase();
+            if (name.includes("sin")) return `Math.sin(${arg})`;
+            if (name.includes("cos")) return `Math.cos(${arg})`;
+            if (name.includes("tan")) return `Math.tan(${arg})`;
+            if (name.includes("exp")) return `Math.exp(${arg})`;
+            if (name.includes("ln") || name.includes("log")) return `Math.log(${arg})`;
+            if (name.includes("sqrt")) return `Math.sqrt(${arg})`;
+            return `${node.name}(${arg})`;
+          }
+          default:
+            return "";
+        }
+      }
+
+      function updateConverter() {
+        try {
+          const base = convertTextToJs(textFunc.value);
+          if (!base) {
+            jsFunc.value = "";
+            clearError();
+            return;
+          }
+          const expr = addImplicitMultiplication(base);
+          const tokens = tokenize(expr);
+          const ast = parseExpression(tokens);
+          jsFunc.value = toJs(ast);
+          clearError();
+        } catch (err) {
+          jsFunc.value = "";
+          showError(`No se pudo convertir: ${err.message}`);
+        }
+      }
+
+      startBtn.addEventListener("click", start);
+      stopBtn.addEventListener("click", stop);
+      stepBtn.addEventListener("click", stepOnce);
+      expandBtn.addEventListener("click", openTableWindow);
+      resetBtn.addEventListener("click", resetAll);
+      textFunc.addEventListener("input", updateConverter);
+      toGxBtn.addEventListener("click", () => {
+        updateConverter();
+        if (jsFunc.value) gxInput.value = jsFunc.value;
+      });
+      copyJsBtn.addEventListener("click", async () => {
+        updateConverter();
+        if (!jsFunc.value) return;
+        try {
+          await navigator.clipboard.writeText(jsFunc.value);
+        } catch {
+          jsFunc.select();
+          document.execCommand("copy");
+        }
+      });
+
+      setEjemplo();
+      resetAll();
+    </script>
+  </body>
+</html>

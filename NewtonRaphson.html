@@ -1,0 +1,952 @@
+﻿<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Newton-Raphson</title>
+    <style>
+      :root {
+        --bg: #0f1a2b;
+        --panel: #132238;
+        --grid: #1e3352;
+        --accent: #ffb703;
+        --accent-2: #fb8500;
+        --text: #e9f1ff;
+        --muted: #9fb5d1;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: radial-gradient(1200px 600px at 20% 10%, #1d2f4a, var(--bg));
+        color: var(--text);
+        font-family: "Trebuchet MS", "Segoe UI", Tahoma, sans-serif;
+      }
+
+      header {
+        padding: 18px 22px 6px 22px;
+      }
+
+      h1 {
+        margin: 0;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+      }
+
+      .sub {
+        margin-top: 6px;
+        color: var(--muted);
+      }
+
+      .wrap {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 16px;
+        padding: 14px 22px 24px 22px;
+      }
+
+      .panel {
+        background: linear-gradient(160deg, #162a46, #10233b);
+        border: 1px solid #1b3253;
+        border-radius: 12px;
+        padding: 14px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      }
+
+      .controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 12px;
+      }
+
+      label {
+        font-size: 13px;
+        color: var(--muted);
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      input,
+      select {
+        width: 100%;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid #294369;
+        background: #0f2036;
+        color: var(--text);
+      }
+
+      .btns {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      button {
+        padding: 9px 12px;
+        border-radius: 8px;
+        border: none;
+        background: var(--accent);
+        color: #1a1200;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      button.secondary {
+        background: #2a476f;
+        color: var(--text);
+      }
+
+      canvas {
+        width: 100%;
+        height: 440px;
+        background: #0b192c;
+        border-radius: 10px;
+        border: 1px solid #1b3253;
+      }
+
+      .legend {
+        margin-top: 10px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .table {
+        max-height: 440px;
+        overflow: auto;
+        border-radius: 10px;
+        border: 1px solid #1b3253;
+        margin-top: 10px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      th,
+      td {
+        padding: 8px 10px;
+        border-bottom: 1px solid #1b3253;
+        text-align: right;
+      }
+
+      th {
+        position: sticky;
+        top: 0;
+        background: #142742;
+        text-align: left;
+      }
+
+      .foot {
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .converter {
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px solid #1b3253;
+      }
+
+      .error-box {
+        margin-top: 10px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 120, 120, 0.4);
+        background: rgba(120, 30, 30, 0.35);
+        color: #ffd6d6;
+        font-size: 13px;
+        display: none;
+      }
+
+      .converter-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 10px 12px;
+      }
+
+      .converter-field input {
+        width: 100%;
+      }
+
+      @media (max-width: 980px) {
+        .wrap {
+          grid-template-columns: 1fr;
+        }
+        canvas {
+          height: 360px;
+        }
+        .converter-row {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Método de Newton-Raphson</h1>
+      <div class="sub">Encuentra raíces con tangentes sucesivas: x_{n+1} = x_n - f(x)/f'(x).</div>
+    </header>
+
+    <div class="wrap">
+      <section class="panel">
+        <div class="controls">
+          <div>
+            <label for="ejemplo">Ejemplo</label>
+            <select id="ejemplo">
+              <option value="x2-2">f(x) = x^2 - 2</option>
+              <option value="cos-x">f(x) = cos(x) - x</option>
+              <option value="x3-x-2">f(x) = x^3 - x - 2</option>
+              <option value="custom">Personalizada</option>
+            </select>
+          </div>
+          <div>
+            <label for="fx">f(x)</label>
+            <input id="fx" value="x*x - 2" />
+          </div>
+          <div>
+            <label for="dfx">f'(x)</label>
+            <input id="dfx" value="2*x" />
+          </div>
+          <div>
+            <label for="x0">x0</label>
+            <input id="x0" value="1.5" />
+          </div>
+          <div>
+            <label for="tol">tolerancia</label>
+            <input id="tol" value="1e-6" />
+          </div>
+          <div>
+            <label for="maxIter">max_iter</label>
+            <input id="maxIter" value="50" />
+          </div>
+          <div>
+            <label for="speed">velocidad (ms)</label>
+            <input id="speed" value="120" />
+          </div>
+        </div>
+        <div class="btns">
+          <button id="start">Iniciar</button>
+          <button id="stop" class="secondary">Pausar</button>
+          <button id="step" class="secondary">Paso</button>
+          <button id="expand" class="secondary">Agrandar tabla</button>
+          <button id="reset" class="secondary">Reiniciar</button>
+        </div>
+        <div id="errorBox" class="error-box" role="alert" aria-live="polite"></div>
+        <div class="converter">
+          <div class="converter-row">
+            <div class="converter-field">
+              <label for="textFunc">Texto a convertir (ej: ln(x) - 1)</label>
+              <input id="textFunc" placeholder="ln(x) - 1" />
+            </div>
+            <div class="converter-field">
+              <label for="jsFunc">Salida lista para f(x)</label>
+              <input id="jsFunc" readonly />
+            </div>
+            <div class="converter-field">
+              <label for="jsDeriv">Salida lista para f'(x)</label>
+              <input id="jsDeriv" readonly />
+            </div>
+          </div>
+          <div class="btns">
+            <button id="toFx" class="secondary">Usar como f(x)</button>
+            <button id="toDfx" class="secondary">Usar como f'(x)</button>
+            <button id="copyJs" class="secondary">Copiar salida</button>
+          </div>
+        </div>
+        <div class="legend">
+          Azul: f(x). Gris: eje x. Naranja: iteraciones x_n y tangentes.
+        </div>
+        <div class="foot">Recomendado: f(x)=x^2-2, x0=1.5.</div>
+      </section>
+
+      <section class="panel">
+        <canvas id="plot" width="800" height="440"></canvas>
+        <div class="table">
+          <table>
+            <thead>
+              <tr>
+                <th>n</th>
+                <th>x_n</th>
+                <th>f(x_n)</th>
+                <th>f'(x_n)</th>
+                <th>x_{n+1}</th>
+                <th>error_abs</th>
+                <th>error_rel</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("plot");
+      const ctx = canvas.getContext("2d");
+
+      const ejemplo = document.getElementById("ejemplo");
+      const fxInput = document.getElementById("fx");
+      const dfxInput = document.getElementById("dfx");
+      const x0Input = document.getElementById("x0");
+      const tolInput = document.getElementById("tol");
+      const maxIterInput = document.getElementById("maxIter");
+      const speedInput = document.getElementById("speed");
+      const tbody = document.getElementById("tbody");
+
+      const startBtn = document.getElementById("start");
+      const stopBtn = document.getElementById("stop");
+      const stepBtn = document.getElementById("step");
+      const expandBtn = document.getElementById("expand");
+      const resetBtn = document.getElementById("reset");
+      const errorBox = document.getElementById("errorBox");
+      const textFunc = document.getElementById("textFunc");
+      const jsFunc = document.getElementById("jsFunc");
+      const jsDeriv = document.getElementById("jsDeriv");
+      const toFxBtn = document.getElementById("toFx");
+      const toDfxBtn = document.getElementById("toDfx");
+      const copyJsBtn = document.getElementById("copyJs");
+
+      let timer = null;
+      let iter = 0;
+      let x = 0;
+      let points = [];
+      let cfg = null;
+
+      function setEjemplo() {
+        if (ejemplo.value === "x2-2") {
+          fxInput.value = "x*x - 2";
+          dfxInput.value = "2*x";
+          x0Input.value = "1.5";
+        } else if (ejemplo.value === "cos-x") {
+          fxInput.value = "Math.cos(x) - x";
+          dfxInput.value = "-Math.sin(x) - 1";
+          x0Input.value = "0.7";
+        } else if (ejemplo.value === "x3-x-2") {
+          fxInput.value = "x*x*x - x - 2";
+          dfxInput.value = "3*x*x - 1";
+          x0Input.value = "1.5";
+        }
+      }
+
+      ejemplo.addEventListener("change", () => {
+        if (ejemplo.value !== "custom") setEjemplo();
+      });
+
+      function parseFunction(expr) {
+        return new Function("x", `return ${expr};`);
+      }
+
+      function normalizeExpr(expr) {
+        return expr.replace(/Math\.Math\./gi, "Math.");
+      }
+
+      function showError(msg) {
+        errorBox.textContent = msg;
+        errorBox.style.display = "block";
+      }
+
+      function clearError() {
+        errorBox.textContent = "";
+        errorBox.style.display = "none";
+      }
+
+      function resetState() {
+        iter = 0;
+        tbody.innerHTML = "";
+        points = [];
+        x = parseFloat(x0Input.value);
+      }
+
+      function computeConfig() {
+        const fxExpr = normalizeExpr(fxInput.value);
+        const dfxExpr = normalizeExpr(dfxInput.value);
+        fxInput.value = fxExpr;
+        dfxInput.value = dfxExpr;
+        try {
+          const f = parseFunction(fxExpr);
+          const df = parseFunction(dfxExpr);
+          const tol = parseFloat(tolInput.value);
+          const maxIter = parseInt(maxIterInput.value, 10);
+          const speed = parseInt(speedInput.value, 10);
+          clearError();
+          return { f, df, tol, maxIter, speed };
+        } catch (err) {
+          showError(`Error en la función: ${err.message}`);
+          return null;
+        }
+      }
+
+      function getRange() {
+        const xs = points.map((p) => p.x).concat([x]);
+        const minX = Math.min(...xs) - 1;
+        const maxX = Math.max(...xs) + 1;
+        return { minX, maxX };
+      }
+
+      function drawAxes(minX, maxX, minY, maxY) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#0b192c";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.strokeStyle = "#1e3352";
+        ctx.lineWidth = 1;
+
+        for (let i = 0; i <= 10; i++) {
+          const t = i / 10;
+          const y = t * canvas.height;
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(canvas.width, y);
+          ctx.stroke();
+        }
+        for (let i = 0; i <= 10; i++) {
+          const t = i / 10;
+          const xg = t * canvas.width;
+          ctx.beginPath();
+          ctx.moveTo(xg, 0);
+          ctx.lineTo(xg, canvas.height);
+          ctx.stroke();
+        }
+
+        // axes
+        ctx.strokeStyle = "#9fb5d1";
+        ctx.lineWidth = 1.5;
+        const y0 = mapY(0, minY, maxY);
+        const x0 = mapX(0, minX, maxX);
+        if (y0 >= 0 && y0 <= canvas.height) {
+          ctx.beginPath();
+          ctx.moveTo(0, y0);
+          ctx.lineTo(canvas.width, y0);
+          ctx.stroke();
+        }
+        if (x0 >= 0 && x0 <= canvas.width) {
+          ctx.beginPath();
+          ctx.moveTo(x0, 0);
+          ctx.lineTo(x0, canvas.height);
+          ctx.stroke();
+        }
+
+        // tick labels
+        ctx.fillStyle = "#9fb5d1";
+        ctx.font = "12px Trebuchet MS";
+        for (let i = 0; i <= 4; i++) {
+          const t = i / 4;
+          const xv = minX + (maxX - minX) * t;
+          const px = mapX(xv, minX, maxX);
+          const label = xv.toFixed(2);
+          ctx.fillText(label, px + 4, canvas.height - 6);
+        }
+        for (let i = 0; i <= 4; i++) {
+          const t = i / 4;
+          const yv = minY + (maxY - minY) * (1 - t);
+          const py = mapY(yv, minY, maxY);
+          const label = yv.toFixed(2);
+          ctx.fillText(label, 6, py - 4);
+        }
+      }
+
+      function mapX(x, minX, maxX) {
+        return ((x - minX) / (maxX - minX)) * canvas.width;
+      }
+
+      function mapY(y, minY, maxY) {
+        return canvas.height - ((y - minY) / (maxY - minY)) * canvas.height;
+      }
+
+      function drawFunction(f, minX, maxX, minY, maxY) {
+        ctx.strokeStyle = "#4cc9f0";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i = 0; i <= 500; i++) {
+          const x = minX + (maxX - minX) * (i / 500);
+          const y = f(x);
+          const px = mapX(x, minX, maxX);
+          const py = mapY(y, minY, maxY);
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+      }
+
+      function drawTangents(minX, maxX, minY, maxY) {
+        ctx.strokeStyle = "#ffb703";
+        ctx.lineWidth = 2;
+        points.forEach((p) => {
+          if (!Number.isFinite(p.df) || Math.abs(p.df) < 1e-12) return;
+          const xA = p.x - 1.5;
+          const xB = p.x + 1.5;
+          const yA = p.f + p.df * (xA - p.x);
+          const yB = p.f + p.df * (xB - p.x);
+          ctx.beginPath();
+          ctx.moveTo(mapX(xA, minX, maxX), mapY(yA, minY, maxY));
+          ctx.lineTo(mapX(xB, minX, maxX), mapY(yB, minY, maxY));
+          ctx.stroke();
+
+          ctx.fillStyle = "#ffb703";
+          ctx.beginPath();
+          ctx.arc(mapX(p.x, minX, maxX), mapY(p.f, minY, maxY), 3, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = "#ffb703";
+          ctx.beginPath();
+          ctx.arc(mapX(p.x1, minX, maxX), mapY(0, minY, maxY), 3, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      }
+
+      function render(f) {
+        const { minX, maxX } = getRange();
+        let minY = Infinity;
+        let maxY = -Infinity;
+
+        for (let i = 0; i <= 200; i++) {
+          const x = minX + (maxX - minX) * (i / 200);
+          let y;
+          try {
+            y = f(x);
+          } catch (err) {
+            showError(`Error al evaluar f(x): ${err.message}`);
+            stop();
+            return;
+          }
+          if (Number.isFinite(y)) {
+            minY = Math.min(minY, y);
+            maxY = Math.max(maxY, y);
+          }
+        }
+        if (!Number.isFinite(minY) || !Number.isFinite(maxY) || minY === maxY) {
+          minY = -1;
+          maxY = 1;
+        }
+        minY -= 0.5;
+        maxY += 0.5;
+
+        drawAxes(minX, maxX, minY, maxY);
+        drawFunction(f, minX, maxX, minY, maxY);
+        drawTangents(minX, maxX, minY, maxY);
+      }
+
+      function step() {
+        if (!cfg) return;
+        const { f, df, tol, maxIter } = cfg;
+
+        let fx;
+        let dfx;
+        try {
+          fx = f(x);
+          dfx = df(x);
+        } catch (err) {
+          showError(`Error al evaluar f(x) o f'(x): ${err.message}`);
+          stop();
+          return;
+        }
+        let x1 = NaN;
+        if (Math.abs(dfx) > 1e-12) {
+          x1 = x - fx / dfx;
+        }
+        const errAbs = Number.isFinite(x1) ? Math.abs(x1 - x) : Math.abs(fx);
+        const errRel =
+          Number.isFinite(x1) && Math.abs(x1) > 0 ? errAbs / Math.abs(x1) : NaN;
+
+        iter += 1;
+        points.push({ x, f: fx, df: dfx, x1 });
+
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>${iter}</td><td>${x.toFixed(10)}</td><td>${fx.toFixed(
+          10
+        )}</td><td>${dfx.toFixed(10)}</td><td>${
+          Number.isFinite(x1) ? x1.toFixed(10) : "-"
+        }</td><td>${errAbs.toFixed(10)}</td><td>${
+          Number.isFinite(errRel) ? errRel.toFixed(10) : "-"
+        }</td>`;
+        tbody.appendChild(row);
+
+        render(f);
+
+        if (errAbs < tol || iter >= maxIter) {
+          stop();
+        } else {
+          x = x1;
+        }
+      }
+
+      function start() {
+        cfg = computeConfig();
+        if (!cfg) return;
+        if (!timer) {
+          timer = setInterval(step, cfg.speed);
+        }
+      }
+
+      function stop() {
+        if (timer) {
+          clearInterval(timer);
+          timer = null;
+        }
+      }
+
+      function stepOnce() {
+        stop();
+        if (!cfg) cfg = computeConfig();
+        if (!cfg) return;
+        step();
+      }
+
+      function resetAll() {
+        stop();
+        resetState();
+        cfg = computeConfig();
+        if (!cfg) return;
+        render(cfg.f);
+      }
+
+      function openTableWindow() {
+        const w = window.open("", "_blank");
+        if (!w) return;
+        const doc = w.document;
+        doc.title = "Tabla Newton-Raphson";
+        const style = doc.createElement("style");
+        style.textContent =
+          "body { font-family: \"Trebuchet MS\", \"Segoe UI\", Tahoma, sans-serif; padding: 16px; }" +
+          "h1 { margin: 0 0 12px 0; }" +
+          "table { width: 100%; border-collapse: collapse; font-size: 13px; }" +
+          "th, td { padding: 8px 10px; border-bottom: 1px solid #ddd; text-align: right; }" +
+          "th { text-align: left; background: #f2f2f2; position: sticky; top: 0; }";
+        if (doc.head) doc.head.appendChild(style);
+
+        const h1 = doc.createElement("h1");
+        h1.textContent = "Tabla de valores - Newton-Raphson";
+        if (doc.body) doc.body.appendChild(h1);
+
+        const table = doc.createElement("table");
+        const thead = doc.createElement("thead");
+        thead.innerHTML = document.querySelector("thead").innerHTML;
+        const tbodyCopy = doc.createElement("tbody");
+        tbodyCopy.innerHTML = tbody.innerHTML;
+        table.appendChild(thead);
+        table.appendChild(tbodyCopy);
+        if (doc.body) doc.body.appendChild(table);
+      }
+
+      function convertTextToJs(text) {
+        let s = text.trim();
+        if (!s) return "";
+        s = s.replace(/,/g, ".");
+        s = s.replace(/\s+/g, "");
+        s = s.replace(/Math\.Math\./gi, "Math.");
+        s = s.replace(/Math\.log/gi, "__LOG__");
+        s = s.replace(/\bpi\b/gi, "Math.PI");
+        s = s.replace(/\be\b/gi, "Math.E");
+        s = s.replace(/\bln\b/gi, "Math.log");
+        s = s.replace(/\blog\b/gi, "Math.log");
+        s = s.replace(/\bexp\b/gi, "Math.exp");
+        s = s.replace(/\bsqrt\b/gi, "Math.sqrt");
+        s = s.replace(/\babs\b/gi, "Math.abs");
+        s = s.replace(/\bsin\b/gi, "Math.sin");
+        s = s.replace(/\bcos\b/gi, "Math.cos");
+        s = s.replace(/\btan\b/gi, "Math.tan");
+        s = s.replace(/__LOG__/g, "Math.log");
+        return s;
+      }
+
+      function addImplicitMultiplication(s) {
+        return s
+          .replace(/(\d)(x|Math\.|[A-Za-z_]\w*\()/g, "$1*$2")
+          .replace(/(x|\))(\d)/g, "$1*$2")
+          .replace(/(x|\))(Math\.|[A-Za-z_]\w*\()/g, "$1*$2")
+          .replace(/(\d)(\()/g, "$1*$2");
+      }
+
+      function tokenize(expr) {
+        const tokens = [];
+        let i = 0;
+        while (i < expr.length) {
+          const ch = expr[i];
+          if (/[0-9.]/.test(ch)) {
+            let j = i + 1;
+            while (j < expr.length && /[0-9.]/.test(expr[j])) j++;
+            tokens.push({ type: "num", value: expr.slice(i, j) });
+            i = j;
+            continue;
+          }
+          if (/[A-Za-z_]/.test(ch)) {
+            let j = i + 1;
+            while (j < expr.length && /[A-Za-z0-9_.]/.test(expr[j])) j++;
+            tokens.push({ type: "id", value: expr.slice(i, j) });
+            i = j;
+            continue;
+          }
+          if ("+-*/^()".includes(ch)) {
+            tokens.push({ type: "op", value: ch });
+            i += 1;
+            continue;
+          }
+          throw new Error(`Carácter inválido: ${ch}`);
+        }
+        return tokens;
+      }
+
+      function parseExpression(tokens) {
+        let pos = 0;
+        const peek = () => tokens[pos];
+        const next = () => tokens[pos++];
+
+        function parsePrimary() {
+          const t = next();
+          if (!t) throw new Error("Expresión incompleta");
+          if (t.type === "num") return { type: "num", value: parseFloat(t.value) };
+          if (t.type === "id") {
+            const name = t.value;
+            if (peek() && peek().type === "op" && peek().value === "(") {
+              next();
+              const arg = parseAddSub();
+              if (!peek() || peek().value !== ")") throw new Error("Falta ')'");
+              next();
+              return { type: "func", name, arg };
+            }
+            if (name.toLowerCase() === "x") return { type: "var" };
+            if (name.toLowerCase() === "math.pi" || name.toLowerCase() === "pi")
+              return { type: "const", name: "pi" };
+            if (name.toLowerCase() === "math.e" || name.toLowerCase() === "e")
+              return { type: "const", name: "e" };
+            return { type: "id", name };
+          }
+          if (t.type === "op" && t.value === "(") {
+            const expr = parseAddSub();
+            if (!peek() || peek().value !== ")") throw new Error("Falta ')'");
+            next();
+            return expr;
+          }
+          throw new Error("Token inesperado");
+        }
+
+        function parseUnary() {
+          if (peek() && peek().type === "op" && (peek().value === "+" || peek().value === "-")) {
+            const op = next().value;
+            const expr = parseUnary();
+            if (op === "-") return { type: "neg", arg: expr };
+            return expr;
+          }
+          return parsePower();
+        }
+
+        function parsePower() {
+          let left = parsePrimary();
+          if (peek() && peek().type === "op" && peek().value === "^") {
+            next();
+            const right = parsePower();
+            left = { type: "op", op: "^", left, right };
+          }
+          return left;
+        }
+
+        function parseMulDiv() {
+          let left = parseUnary();
+          while (peek() && peek().type === "op" && (peek().value === "*" || peek().value === "/")) {
+            const op = next().value;
+            const right = parseUnary();
+            left = { type: "op", op, left, right };
+          }
+          return left;
+        }
+
+        function parseAddSub() {
+          let left = parseMulDiv();
+          while (peek() && peek().type === "op" && (peek().value === "+" || peek().value === "-")) {
+            const op = next().value;
+            const right = parseMulDiv();
+            left = { type: "op", op, left, right };
+          }
+          return left;
+        }
+
+        const expr = parseAddSub();
+        if (pos < tokens.length) throw new Error("Token inesperado al final");
+        return expr;
+      }
+
+      function derive(node) {
+        switch (node.type) {
+          case "num":
+          case "const":
+            return { type: "num", value: 0 };
+          case "var":
+            return { type: "num", value: 1 };
+          case "neg":
+            return { type: "neg", arg: derive(node.arg) };
+          case "op": {
+            const u = node.left;
+            const v = node.right;
+            if (node.op === "+") return { type: "op", op: "+", left: derive(u), right: derive(v) };
+            if (node.op === "-") return { type: "op", op: "-", left: derive(u), right: derive(v) };
+            if (node.op === "*")
+              return {
+                type: "op",
+                op: "+",
+                left: { type: "op", op: "*", left: derive(u), right: v },
+                right: { type: "op", op: "*", left: u, right: derive(v) },
+              };
+            if (node.op === "/")
+              return {
+                type: "op",
+                op: "/",
+                left: {
+                  type: "op",
+                  op: "-",
+                  left: { type: "op", op: "*", left: derive(u), right: v },
+                  right: { type: "op", op: "*", left: u, right: derive(v) },
+                },
+                right: { type: "op", op: "^", left: v, right: { type: "num", value: 2 } },
+              };
+            if (node.op === "^") {
+              if (node.right.type === "num") {
+                return {
+                  type: "op",
+                  op: "*",
+                  left: { type: "op", op: "*", left: { type: "num", value: node.right.value }, right: { type: "op", op: "^", left: u, right: { type: "num", value: node.right.value - 1 } } },
+                  right: derive(u),
+                };
+              }
+              return {
+                type: "op",
+                op: "*",
+                left: { type: "op", op: "^", left: u, right: v },
+                right: {
+                  type: "op",
+                  op: "+",
+                  left: { type: "op", op: "*", left: derive(v), right: { type: "func", name: "ln", arg: u } },
+                  right: { type: "op", op: "*", left: v, right: { type: "op", op: "/", left: derive(u), right: u } },
+                },
+              };
+            }
+            return { type: "num", value: 0 };
+          }
+          case "func": {
+            const u = node.arg;
+            const du = derive(u);
+            const name = node.name.toLowerCase();
+            if (name.includes("sin"))
+              return { type: "op", op: "*", left: { type: "func", name: "cos", arg: u }, right: du };
+            if (name.includes("cos"))
+              return { type: "op", op: "*", left: { type: "neg", arg: { type: "func", name: "sin", arg: u } }, right: du };
+            if (name.includes("tan"))
+              return {
+                type: "op",
+                op: "*",
+                left: { type: "op", op: "/", left: { type: "num", value: 1 }, right: { type: "op", op: "^", left: { type: "func", name: "cos", arg: u }, right: { type: "num", value: 2 } } },
+                right: du,
+              };
+            if (name.includes("exp"))
+              return { type: "op", op: "*", left: { type: "func", name: "exp", arg: u }, right: du };
+            if (name.includes("ln") || name.includes("log"))
+              return { type: "op", op: "/", left: du, right: u };
+            if (name.includes("sqrt"))
+              return {
+                type: "op",
+                op: "/",
+                left: du,
+                right: { type: "op", op: "*", left: { type: "num", value: 2 }, right: { type: "func", name: "sqrt", arg: u } },
+              };
+            return { type: "num", value: 0 };
+          }
+          default:
+            return { type: "num", value: 0 };
+        }
+      }
+
+      function toJs(node) {
+        switch (node.type) {
+          case "num":
+            return Number.isFinite(node.value) ? String(node.value) : "NaN";
+          case "const":
+            return node.name === "pi" ? "Math.PI" : "Math.E";
+          case "var":
+            return "x";
+          case "id":
+            return node.name;
+          case "neg":
+            return `(-${toJs(node.arg)})`;
+          case "op": {
+            const a = toJs(node.left);
+            const b = toJs(node.right);
+            if (node.op === "^") return `Math.pow(${a}, ${b})`;
+            return `(${a} ${node.op} ${b})`;
+          }
+          case "func": {
+            const arg = toJs(node.arg);
+            const name = node.name.toLowerCase();
+            if (name.includes("sin")) return `Math.sin(${arg})`;
+            if (name.includes("cos")) return `Math.cos(${arg})`;
+            if (name.includes("tan")) return `Math.tan(${arg})`;
+            if (name.includes("exp")) return `Math.exp(${arg})`;
+            if (name.includes("ln") || name.includes("log")) return `Math.log(${arg})`;
+            if (name.includes("sqrt")) return `Math.sqrt(${arg})`;
+            return `${node.name}(${arg})`;
+          }
+          default:
+            return "";
+        }
+      }
+
+      function updateConverter() {
+        try {
+          const base = convertTextToJs(textFunc.value);
+          if (!base) {
+            jsFunc.value = "";
+            jsDeriv.value = "";
+            clearError();
+            return;
+          }
+          const expr = addImplicitMultiplication(base);
+          const tokens = tokenize(expr);
+          const ast = parseExpression(tokens);
+          const dAst = derive(ast);
+          jsFunc.value = toJs(ast);
+          jsDeriv.value = toJs(dAst);
+          clearError();
+        } catch (err) {
+          jsFunc.value = "";
+          jsDeriv.value = "";
+          showError(`No se pudo convertir: ${err.message}`);
+        }
+      }
+
+      startBtn.addEventListener("click", start);
+      stopBtn.addEventListener("click", stop);
+      stepBtn.addEventListener("click", stepOnce);
+      expandBtn.addEventListener("click", openTableWindow);
+      resetBtn.addEventListener("click", resetAll);
+      textFunc.addEventListener("input", updateConverter);
+      toFxBtn.addEventListener("click", () => {
+        updateConverter();
+        if (jsFunc.value) fxInput.value = jsFunc.value;
+      });
+      toDfxBtn.addEventListener("click", () => {
+        updateConverter();
+        if (jsDeriv.value) dfxInput.value = jsDeriv.value;
+      });
+      copyJsBtn.addEventListener("click", async () => {
+        updateConverter();
+        if (!jsFunc.value && !jsDeriv.value) return;
+        try {
+          await navigator.clipboard.writeText(
+            jsDeriv.value ? `${jsFunc.value}\n${jsDeriv.value}` : jsFunc.value
+          );
+        } catch {
+          jsFunc.select();
+          document.execCommand("copy");
+        }
+      });
+
+      setEjemplo();
+      resetAll();
+    </script>
+  </body>
+</html>
