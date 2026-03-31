@@ -1,0 +1,943 @@
+﻿<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Interpolación de Lagrange</title>
+    <script>
+      window.MathJax = {
+        tex: { inlineMath: [["\\(", "\\)"]] },
+        svg: { fontCache: "global" },
+      };
+    </script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+      defer
+    ></script>
+    <style>
+      :root {
+        --bg: #0f1a2b;
+        --panel: #132238;
+        --grid: #1e3352;
+        --accent: #ffb703;
+        --accent-2: #fb8500;
+        --text: #e9f1ff;
+        --muted: #9fb5d1;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: radial-gradient(1200px 600px at 20% 10%, #1d2f4a, var(--bg));
+        color: var(--text);
+        font-family: "Trebuchet MS", "Segoe UI", Tahoma, sans-serif;
+      }
+
+      header {
+        padding: 18px 22px 6px 22px;
+      }
+
+      h1 {
+        margin: 0;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+      }
+
+      .sub {
+        margin-top: 6px;
+        color: var(--muted);
+      }
+
+      .wrap {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 16px;
+        padding: 14px 22px 24px 22px;
+      }
+
+      .panel {
+        background: linear-gradient(160deg, #162a46, #10233b);
+        border: 1px solid #1b3253;
+        border-radius: 12px;
+        padding: 14px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      }
+
+      .controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 12px;
+      }
+
+      label {
+        font-size: 13px;
+        color: var(--muted);
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid #294369;
+        background: #0f2036;
+        color: var(--text);
+      }
+
+      textarea {
+        min-height: 120px;
+        resize: vertical;
+      }
+
+      .btns {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      button {
+        padding: 9px 12px;
+        border-radius: 8px;
+        border: none;
+        background: var(--accent);
+        color: #1a1200;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      button.secondary {
+        background: #2a476f;
+        color: var(--text);
+      }
+
+      canvas {
+        width: 100%;
+        height: 440px;
+        background: #0b192c;
+        border-radius: 10px;
+        border: 1px solid #1b3253;
+      }
+
+      .legend {
+        margin-top: 10px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .table {
+        max-height: 440px;
+        overflow: auto;
+        border-radius: 10px;
+        border: 1px solid #1b3253;
+        margin-top: 10px;
+      }
+      .latex-block {
+        margin-top: 10px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid #1b3253;
+        background: #0f2036;
+        color: var(--text);
+        font-size: 13px;
+      }
+
+      .poly-output {
+        margin-top: 10px;
+      }
+
+      .poly-output textarea {
+        min-height: 90px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      th,
+      td {
+        padding: 8px 10px;
+        border-bottom: 1px solid #1b3253;
+        text-align: right;
+      }
+
+      td.latex {
+        text-align: left;
+      }
+
+      th {
+        position: sticky;
+        top: 0;
+        background: #142742;
+        text-align: left;
+      }
+
+      .foot {
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .error-box {
+        margin-top: 10px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 120, 120, 0.4);
+        background: rgba(120, 30, 30, 0.35);
+        color: #ffd6d6;
+        font-size: 13px;
+        display: none;
+      }
+
+      .deriv-output {
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px solid #1b3253;
+      }
+
+      .deriv-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 10px 12px;
+      }
+
+      .error-output {
+        margin-top: 10px;
+      }
+
+      .error-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 10px 12px;
+      }
+
+      @media (max-width: 980px) {
+        .wrap {
+          grid-template-columns: 1fr;
+        }
+        canvas {
+          height: 360px;
+        }
+        .deriv-row {
+          grid-template-columns: 1fr;
+        }
+        .error-row {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Interpolación de Lagrange</h1>
+      <div class="sub">Construye el polinomio interpolante a partir de puntos (x, y).</div>
+    </header>
+
+    <div class="wrap">
+      <section class="panel">
+        <div class="controls">
+          <div>
+            <label for="ejemplo">Ejemplo</label>
+            <select id="ejemplo">
+              <option value="lin">Lineal</option>
+              <option value="cuad">Cuadrático</option>
+              <option value="sin">Seno</option>
+              <option value="custom">Personalizado</option>
+            </select>
+          </div>
+          <div>
+            <label for="fx">f(x) a aproximar</label>
+            <input id="fx" value="2*x + 1" />
+          </div>
+          <div>
+            <label for="fxText">Transformador (texto → f(x))</label>
+            <input id="fxText" placeholder="ln(x) - 1" />
+          </div>
+          <div>
+            <label for="fxJs">Salida lista para código</label>
+            <input id="fxJs" readonly />
+          </div>
+          <div>
+            <label for="xErr">Error en x</label>
+            <input id="xErr" value="1.5" />
+          </div>
+          <div>
+            <label for="h">h (diferencias)</label>
+            <input id="h" value="0.01" />
+          </div>
+          <div>
+            <label for="xmin">x_min (gráfica)</label>
+            <input id="xmin" value="0" />
+          </div>
+          <div>
+            <label for="xmax">x_max (gráfica)</label>
+            <input id="xmax" value="4" />
+          </div>
+          <div>
+            <label for="samples">Muestras (gráfica)</label>
+            <input id="samples" value="200" />
+          </div>
+          <div>
+            <label for="showBases">Bases L_i(x)</label>
+            <select id="showBases">
+              <option value="on">Mostrar</option>
+              <option value="off">Ocultar</option>
+            </select>
+          </div>
+          <div>
+            <label for="points">Pares (x, y)</label>
+            <textarea id="points">0, 1
+1, 3
+2, 5
+3, 7
+4, 9</textarea>
+          </div>
+        </div>
+        <div class="btns">
+          <button id="calc">Calcular</button>
+          <button id="applyFx" class="secondary">Usar f(x)</button>
+          <button id="copyFx" class="secondary">Copiar f(x)</button>
+          <button id="expand" class="secondary">Agrandar tabla</button>
+          <button id="reset" class="secondary">Reiniciar</button>
+        </div>
+        <div class="deriv-output">
+          <div class="deriv-row">
+            <div>
+              <label>f(x) interpolada</label>
+              <input id="fxOut" readonly />
+            </div>
+            <div>
+              <label>f'(x) (central)</label>
+              <input id="dfOut" readonly />
+            </div>
+            <div>
+              <label>f''(x) (central)</label>
+              <input id="d2fOut" readonly />
+            </div>
+          </div>
+        </div>
+        <div class="error-output">
+          <div class="error-row">
+            <div>
+              <label>Error local |f(x)-P(x)|</label>
+              <input id="errLocal" readonly />
+            </div>
+            <div>
+              <label>Error global max |f(x)-P(x)|</label>
+              <input id="errGlobal" readonly />
+            </div>
+            <div>
+              <label>Cota de error</label>
+              <input id="errBound" readonly />
+            </div>
+          </div>
+        </div>
+        <div id="errorBox" class="error-box" role="alert" aria-live="polite"></div>
+        <div class="legend">
+          Azul: polinomio interpolante. Gris: bases L_i(x). Naranja: puntos dados.
+        </div>
+        <div class="foot">
+          Formato de puntos: una pareja (x, y) por línea.
+        </div>
+      </section>
+
+      <section class="panel">
+        <canvas id="plot" width="800" height="440"></canvas>
+        <div class="table">
+          <table>
+            <thead>
+              <tr>
+                <th>i</th>
+                <th>L_i(x) (Latex)</th>
+                <th>L_i(x)</th>
+                <th>y_i * L_i(x)</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+        <div class="poly-output">
+          <label>Polinomio P(x) (Latex)</label>
+          <div id="polyLatex" class="latex-block"></div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("plot");
+      const ctx = canvas.getContext("2d");
+
+      const ejemplo = document.getElementById("ejemplo");
+      const fxInput = document.getElementById("fx");
+      const fxText = document.getElementById("fxText");
+      const fxJs = document.getElementById("fxJs");
+      const xErrInput = document.getElementById("xErr");
+      const hInput = document.getElementById("h");
+      const xminInput = document.getElementById("xmin");
+      const xmaxInput = document.getElementById("xmax");
+      const samplesInput = document.getElementById("samples");
+      const pointsInput = document.getElementById("points");
+      const tbody = document.getElementById("tbody");
+      const errorBox = document.getElementById("errorBox");
+      const fxOut = document.getElementById("fxOut");
+      const dfOut = document.getElementById("dfOut");
+      const d2fOut = document.getElementById("d2fOut");
+      const errLocal = document.getElementById("errLocal");
+      const errGlobal = document.getElementById("errGlobal");
+      const errBound = document.getElementById("errBound");
+      const polyLatex = document.getElementById("polyLatex");
+      const showBases = document.getElementById("showBases");
+
+      const calcBtn = document.getElementById("calc");
+      const applyFxBtn = document.getElementById("applyFx");
+      const copyFxBtn = document.getElementById("copyFx");
+      const expandBtn = document.getElementById("expand");
+      const resetBtn = document.getElementById("reset");
+
+      function showError(msg) {
+        errorBox.textContent = msg;
+        errorBox.style.display = "block";
+      }
+
+      function clearError() {
+        errorBox.textContent = "";
+        errorBox.style.display = "none";
+      }
+
+      function setEjemplo() {
+        if (ejemplo.value === "lin") {
+          fxInput.value = "2*x + 1";
+          pointsInput.value = "0, 1\n2, 5";
+          xErrInput.value = "1";
+          xminInput.value = "0";
+          xmaxInput.value = "2";
+        } else if (ejemplo.value === "cuad") {
+          fxInput.value = "x*x - 2*x + 1";
+          pointsInput.value = "0, 1\n1, 0\n2, 1\n3, 4";
+          xErrInput.value = "1.5";
+          xminInput.value = "0";
+          xmaxInput.value = "3";
+        } else if (ejemplo.value === "sin") {
+          fxInput.value = "Math.sin(x)";
+          pointsInput.value = "0, 0\n1.57, 1\n3.14, 0\n4.71, -1\n6.28, 0";
+          xErrInput.value = "2";
+          xminInput.value = "0";
+          xmaxInput.value = "6.28";
+        }
+      }
+
+      ejemplo.addEventListener("change", () => {
+        if (ejemplo.value !== "custom") setEjemplo();
+      });
+
+      function convertTextToJs(text) {
+        let s = text.trim();
+        if (!s) return "";
+        s = s.replace(/,/g, ".");
+        s = s.replace(/\s+/g, "");
+        s = s.replace(/Math\.Math\./gi, "Math.");
+        s = s.replace(/Math\.PI/gi, "__PI__");
+        s = s.replace(/Math\.E/gi, "__E__");
+        s = s.replace(/Math\.log/gi, "__LOG__");
+        s = s.replace(/\bpi\b/gi, "Math.PI");
+        s = s.replace(/\be\b/gi, "Math.E");
+        s = s.replace(/\bln\b/gi, "Math.log");
+        s = s.replace(/\blog\b/gi, "Math.log");
+        s = s.replace(/\bexp\b/gi, "Math.exp");
+        s = s.replace(/\bsqrt\b/gi, "Math.sqrt");
+        s = s.replace(/\babs\b/gi, "Math.abs");
+        s = s.replace(/\bsin\b/gi, "Math.sin");
+        s = s.replace(/\bcos\b/gi, "Math.cos");
+        s = s.replace(/\btan\b/gi, "Math.tan");
+        s = s.replace(/__LOG__/g, "Math.log");
+        s = s.replace(/__PI__/g, "Math.PI");
+        s = s.replace(/__E__/g, "Math.E");
+        s = s.replace(/\^/g, "**");
+        return s;
+      }
+
+      function updateTransformer() {
+        const js = convertTextToJs(fxText.value);
+        fxJs.value = js;
+      }
+
+      function parseFunction(expr) {
+        return new Function("x", `return ${expr};`);
+      }
+
+      function parsePoints() {
+        const lines = pointsInput.value
+          .split(/\n|;/)
+          .map((l) => l.trim())
+          .filter(Boolean);
+        const pts = [];
+        for (const line of lines) {
+          const cleaned = line.replace(/\s+/g, "");
+          const parts = cleaned.split(/,|\s+/).filter(Boolean);
+          if (parts.length < 2) throw new Error(`Formato inválido: ${line}`);
+          const x = parseFloat(parts[0]);
+          const y = parseFloat(parts[1]);
+          if (!Number.isFinite(x) || !Number.isFinite(y)) {
+            throw new Error(`Valor inválido: ${line}`);
+          }
+          pts.push({ x, y });
+        }
+        if (pts.length < 2) throw new Error("Se requieren al menos 2 puntos.");
+        return pts;
+      }
+
+      function lagrangeBasis(x, pts, i) {
+        let num = 1;
+        let den = 1;
+        const xi = pts[i].x;
+        for (let j = 0; j < pts.length; j++) {
+          if (j === i) continue;
+          const xj = pts[j].x;
+          num *= x - xj;
+          den *= xi - xj;
+        }
+        return num / den;
+      }
+
+      function lagrangeValue(x, pts) {
+        let sum = 0;
+        for (let i = 0; i < pts.length; i++) {
+          sum += pts[i].y * lagrangeBasis(x, pts, i);
+        }
+        return sum;
+      }
+
+      function getRange(pts) {
+        const xs = pts.map((p) => p.x);
+        const ys = pts.map((p) => p.y);
+        const minX = Math.min(...xs);
+        const maxX = Math.max(...xs);
+        const minY = Math.min(...ys);
+        const maxY = Math.max(...ys);
+        return { minX, maxX, minY, maxY };
+      }
+
+      function drawAxes(minX, maxX, minY, maxY) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#0b192c";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.strokeStyle = "#1e3352";
+        ctx.lineWidth = 1;
+
+        for (let i = 0; i <= 10; i++) {
+          const t = i / 10;
+          const y = t * canvas.height;
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(canvas.width, y);
+          ctx.stroke();
+        }
+        for (let i = 0; i <= 10; i++) {
+          const t = i / 10;
+          const xg = t * canvas.width;
+          ctx.beginPath();
+          ctx.moveTo(xg, 0);
+          ctx.lineTo(xg, canvas.height);
+          ctx.stroke();
+        }
+
+        ctx.strokeStyle = "#9fb5d1";
+        ctx.lineWidth = 1.5;
+        const y0 = mapY(0, minY, maxY);
+        const x0 = mapX(0, minX, maxX);
+        if (y0 >= 0 && y0 <= canvas.height) {
+          ctx.beginPath();
+          ctx.moveTo(0, y0);
+          ctx.lineTo(canvas.width, y0);
+          ctx.stroke();
+        }
+        if (x0 >= 0 && x0 <= canvas.width) {
+          ctx.beginPath();
+          ctx.moveTo(x0, 0);
+          ctx.lineTo(x0, canvas.height);
+          ctx.stroke();
+        }
+
+        ctx.fillStyle = "#9fb5d1";
+        ctx.font = "12px Trebuchet MS";
+        for (let i = 0; i <= 4; i++) {
+          const t = i / 4;
+          const xv = minX + (maxX - minX) * t;
+          const px = mapX(xv, minX, maxX);
+          ctx.fillText(xv.toFixed(2), px + 4, canvas.height - 6);
+        }
+        for (let i = 0; i <= 4; i++) {
+          const t = i / 4;
+          const yv = minY + (maxY - minY) * (1 - t);
+          const py = mapY(yv, minY, maxY);
+          ctx.fillText(yv.toFixed(2), 6, py - 4);
+        }
+      }
+
+      function mapX(x, minX, maxX) {
+        return ((x - minX) / (maxX - minX)) * canvas.width;
+      }
+
+      function mapY(y, minY, maxY) {
+        return canvas.height - ((y - minY) / (maxY - minY)) * canvas.height;
+      }
+
+      function drawCurve(pts, xmin, xmax, ymin, ymax, samples) {
+        ctx.strokeStyle = "#4cc9f0";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i = 0; i <= samples; i++) {
+          const x = xmin + (xmax - xmin) * (i / samples);
+          const y = lagrangeValue(x, pts);
+          const px = mapX(x, xmin, xmax);
+          const py = mapY(y, ymin, ymax);
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+      }
+
+      function drawBasisCurves(pts, xmin, xmax, ymin, ymax, samples) {
+        ctx.strokeStyle = "rgba(159, 181, 209, 0.55)";
+        ctx.lineWidth = 1.25;
+        for (let k = 0; k < pts.length; k++) {
+          ctx.beginPath();
+          for (let i = 0; i <= samples; i++) {
+            const x = xmin + (xmax - xmin) * (i / samples);
+            const y = lagrangeBasis(x, pts, k);
+            const px = mapX(x, xmin, xmax);
+            const py = mapY(y, ymin, ymax);
+            if (i === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          }
+          ctx.stroke();
+        }
+      }
+
+      function getYMin(pts, xmin, xmax, samples) {
+        let minY = Infinity;
+        for (let i = 0; i <= samples; i++) {
+          const x = xmin + (xmax - xmin) * (i / samples);
+          const y = lagrangeValue(x, pts);
+          if (Number.isFinite(y)) minY = Math.min(minY, y);
+        }
+        return minY;
+      }
+
+      function getYMax(pts, xmin, xmax, samples) {
+        let maxY = -Infinity;
+        for (let i = 0; i <= samples; i++) {
+          const x = xmin + (xmax - xmin) * (i / samples);
+          const y = lagrangeValue(x, pts);
+          if (Number.isFinite(y)) maxY = Math.max(maxY, y);
+        }
+        return maxY;
+      }
+
+      function drawPoints(pts, xmin, xmax, ymin, ymax) {
+        ctx.fillStyle = "#ffb703";
+        pts.forEach((p) => {
+          const px = mapX(p.x, xmin, xmax);
+          const py = mapY(p.y, ymin, ymax);
+          ctx.beginPath();
+          ctx.arc(px, py, 4, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      }
+
+      function render(pts) {
+        const xmin = parseFloat(xminInput.value);
+        const xmax = parseFloat(xmaxInput.value);
+        const samples = Math.max(20, parseInt(samplesInput.value, 10));
+        const ymin = getYMin(pts, xmin, xmax, samples);
+        const ymax = getYMax(pts, xmin, xmax, samples);
+        const pad = 0.5;
+        const yMinPad = ymin - pad;
+        const yMaxPad = ymax + pad;
+        drawAxes(xmin, xmax, yMinPad, yMaxPad);
+        if (showBases.value === "on") {
+          drawBasisCurves(pts, xmin, xmax, yMinPad, yMaxPad, samples);
+        }
+        drawCurve(pts, xmin, xmax, yMinPad, yMaxPad, samples);
+        drawPoints(pts, xmin, xmax, yMinPad, yMaxPad);
+        drawDerivativeMarkers(pts, xmin, xmax, yMinPad, yMaxPad);
+      }
+
+      function drawDerivativeMarkers(pts, xmin, xmax, ymin, ymax) {
+        const x0 = parseFloat(xErrInput.value);
+        const h = parseFloat(hInput.value);
+        if (!Number.isFinite(x0) || !Number.isFinite(h) || h === 0) return;
+        const fx = lagrangeValue(x0, pts);
+
+        const px = mapX(x0, xmin, xmax);
+        const py = mapY(fx, ymin, ymax);
+
+        ctx.fillStyle = "#ffb703";
+        ctx.beginPath();
+        ctx.arc(px, py, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        const fxph = lagrangeValue(x0 + h, pts);
+        const fxmh = lagrangeValue(x0 - h, pts);
+        const d1 = (fxph - fxmh) / (2 * h);
+        const d2 = (fxph - 2 * fx + fxmh) / (h * h);
+
+        const dx = (xmax - xmin) * 0.15;
+        const x1 = x0 - dx;
+        const x2 = x0 + dx;
+        const y1 = fx + d1 * (x1 - x0);
+        const y2 = fx + d1 * (x2 - x0);
+
+        ctx.strokeStyle = "#fb8500";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(mapX(x1, xmin, xmax), mapY(y1, ymin, ymax));
+        ctx.lineTo(mapX(x2, xmin, xmax), mapY(y2, ymin, ymax));
+        ctx.stroke();
+
+        const k = 0.5 * d2;
+        const xp1 = x0 - dx;
+        const xp2 = x0 + dx;
+        const yp1 = fx + k * Math.pow(xp1 - x0, 2);
+        const yp2 = fx + k * Math.pow(xp2 - x0, 2);
+
+        ctx.strokeStyle = "#f7c35f";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(mapX(xp1, xmin, xmax), mapY(yp1, ymin, ymax));
+        ctx.lineTo(mapX(x0, xmin, xmax), mapY(fx, ymin, ymax));
+        ctx.lineTo(mapX(xp2, xmin, xmax), mapY(yp2, ymin, ymax));
+        ctx.stroke();
+      }
+
+      function basisLatex(pts, i) {
+        const xi = pts[i].x.toFixed(4);
+        const parts = [];
+        for (let j = 0; j < pts.length; j++) {
+          if (j === i) continue;
+          const xj = pts[j].x.toFixed(4);
+          parts.push(`\\frac{x-${xj}}{${xi}-${xj}}`);
+        }
+        return `L_{${i + 1}}(x)=\\prod_{j\\ne ${i + 1}}${parts.join("")}`;
+      }
+
+      function polynomialLatex(pts) {
+        const coeffs = lagrangePolynomialCoeffs(pts);
+        const terms = [];
+        for (let k = coeffs.length - 1; k >= 0; k--) {
+          const c = coeffs[k];
+          if (Math.abs(c) < 1e-10) continue;
+          const sign = c < 0 ? "-" : "+";
+          const abs = Math.abs(c);
+          const cStr = abs.toFixed(6).replace(/\.?0+$/, "");
+          if (k === 0) terms.push(`${sign} ${cStr}`);
+          else if (k === 1) terms.push(`${sign} ${cStr}x`);
+          else terms.push(`${sign} ${cStr}x^{${k}}`);
+        }
+        if (terms.length === 0) return "P(x)=0";
+        const expr = terms.join(" ").replace(/^\+\s*/, "");
+        return `P(x)=${expr}`;
+      }
+
+      function lagrangePolynomialCoeffs(pts) {
+        let coeffs = [0];
+        for (let i = 0; i < pts.length; i++) {
+          let basis = [1];
+          let denom = 1;
+          const xi = pts[i].x;
+          for (let j = 0; j < pts.length; j++) {
+            if (j === i) continue;
+            const xj = pts[j].x;
+            basis = polyMul(basis, [-xj, 1]);
+            denom *= xi - xj;
+          }
+          basis = polyScale(basis, pts[i].y / denom);
+          coeffs = polyAdd(coeffs, basis);
+        }
+        return coeffs;
+      }
+
+      function polyAdd(a, b) {
+        const n = Math.max(a.length, b.length);
+        const out = new Array(n).fill(0);
+        for (let i = 0; i < n; i++) {
+          out[i] = (a[i] || 0) + (b[i] || 0);
+        }
+        return out;
+      }
+
+      function polyMul(a, b) {
+        const out = new Array(a.length + b.length - 1).fill(0);
+        for (let i = 0; i < a.length; i++) {
+          for (let j = 0; j < b.length; j++) {
+            out[i + j] += a[i] * b[j];
+          }
+        }
+        return out;
+      }
+
+      function polyScale(a, s) {
+        return a.map((v) => v * s);
+      }
+
+      function updateTable(pts, xEval) {
+        tbody.innerHTML = "";
+        for (let i = 0; i < pts.length; i++) {
+          const Li = lagrangeBasis(xEval, pts, i);
+          const contrib = pts[i].y * Li;
+          const latex = basisLatex(pts, i);
+          const row = document.createElement("tr");
+          row.innerHTML = `<td>${i + 1}</td><td class="latex">\\(${latex}\\)</td><td>${Li.toFixed(
+            10
+          )}</td><td>${contrib.toFixed(10)}</td>`;
+          tbody.appendChild(row);
+        }
+        polyLatex.innerHTML = `\\(${polynomialLatex(pts)}\\)`;
+        if (window.MathJax && window.MathJax.typesetPromise) {
+          window.MathJax.typesetPromise([tbody, polyLatex]);
+        }
+      }
+
+      function updateDerivatives(pts, xEval, h) {
+        const fx = lagrangeValue(xEval, pts);
+        const fxph = lagrangeValue(xEval + h, pts);
+        const fxmh = lagrangeValue(xEval - h, pts);
+        const d1 = (fxph - fxmh) / (2 * h);
+        const d2 = (fxph - 2 * fx + fxmh) / (h * h);
+        fxOut.value = fx.toFixed(10);
+        dfOut.value = d1.toFixed(10);
+        d2fOut.value = d2.toFixed(10);
+      }
+
+      function updateErrors(pts, xEval) {
+        const fxExpr = convertTextToJs(fxInput.value);
+        if (!fxExpr) throw new Error("f(x) inválida.");
+        let f;
+        try {
+          f = parseFunction(fxExpr);
+        } catch (err) {
+          throw new Error(`Error en f(x): ${err.message}`);
+        }
+        const xErr = parseFloat(xErrInput.value);
+        if (!Number.isFinite(xErr)) throw new Error("x error inválido.");
+        const p = lagrangeValue(xErr, pts);
+        const trueFx = f(xErr);
+        const local = Math.abs(trueFx - p);
+
+        const xmin = parseFloat(xminInput.value);
+        const xmax = parseFloat(xmaxInput.value);
+        const samples = Math.max(20, parseInt(samplesInput.value, 10));
+        let global = 0;
+        for (let i = 0; i <= samples; i++) {
+          const x = xmin + (xmax - xmin) * (i / samples);
+          const err = Math.abs(f(x) - lagrangeValue(x, pts));
+          if (Number.isFinite(err)) global = Math.max(global, err);
+        }
+        errLocal.value = local.toFixed(10);
+        errGlobal.value = global.toFixed(10);
+
+        const n = pts.length - 1;
+        const h = Math.max(1e-4, Math.abs(parseFloat(hInput.value) || 0.01));
+        const factorial = (m) => (m <= 1 ? 1 : m * factorial(m - 1));
+        function nthDerivative(func, x, order, step) {
+          if (order === 0) return func(x);
+          return (nthDerivative(func, x + step, order - 1, step) - nthDerivative(func, x - step, order - 1, step)) / (2 * step);
+        }
+        let M = 0;
+        for (let i = 0; i <= samples; i++) {
+          const x = xmin + (xmax - xmin) * (i / samples);
+          const val = Math.abs(nthDerivative(f, x, n + 1, h));
+          if (Number.isFinite(val)) M = Math.max(M, val);
+        }
+        let prod = 1;
+        for (const pnt of pts) prod *= Math.abs(xErr - pnt.x);
+        const bound = (M / factorial(n + 1)) * prod;
+        errBound.value = Number.isFinite(bound) ? bound.toFixed(10) : "-";
+      }
+
+      function openTableWindow() {
+        const w = window.open("", "_blank");
+        if (!w) return;
+        const doc = w.document;
+        doc.title = "Tabla Lagrange";
+        const style = doc.createElement("style");
+        style.textContent =
+          "body { font-family: \"Trebuchet MS\", \"Segoe UI\", Tahoma, sans-serif; padding: 16px; }" +
+          "h1 { margin: 0 0 12px 0; }" +
+          "table { width: 100%; border-collapse: collapse; font-size: 13px; }" +
+          "th, td { padding: 8px 10px; border-bottom: 1px solid #ddd; text-align: right; }" +
+          "th { text-align: left; background: #f2f2f2; position: sticky; top: 0; }";
+        if (doc.head) doc.head.appendChild(style);
+
+        const h1 = doc.createElement("h1");
+        h1.textContent = "Tabla de valores - Lagrange";
+        if (doc.body) doc.body.appendChild(h1);
+
+        const table = doc.createElement("table");
+        const thead = doc.createElement("thead");
+        thead.innerHTML = document.querySelector("thead").innerHTML;
+        const tbodyCopy = doc.createElement("tbody");
+        tbodyCopy.innerHTML = tbody.innerHTML;
+        table.appendChild(thead);
+        table.appendChild(tbodyCopy);
+        if (doc.body) doc.body.appendChild(table);
+      }
+
+      function calculate() {
+        try {
+          const pts = parsePoints();
+          const xEval = parseFloat(xErrInput.value);
+          if (!Number.isFinite(xEval)) throw new Error("x inválido.");
+          const h = parseFloat(hInput.value);
+          if (!Number.isFinite(h) || h === 0) throw new Error("h inválido.");
+          clearError();
+          updateTable(pts, xEval);
+          updateDerivatives(pts, xEval, h);
+          updateErrors(pts, xEval);
+          render(pts);
+        } catch (err) {
+          showError(err.message);
+        }
+      }
+
+      function resetAll() {
+        setEjemplo();
+        clearError();
+        updateTransformer();
+        calculate();
+      }
+
+      calcBtn.addEventListener("click", calculate);
+      expandBtn.addEventListener("click", openTableWindow);
+      resetBtn.addEventListener("click", resetAll);
+      showBases.addEventListener("change", calculate);
+      fxText.addEventListener("input", updateTransformer);
+      applyFxBtn.addEventListener("click", () => {
+        updateTransformer();
+        if (fxJs.value) fxInput.value = fxJs.value;
+      });
+      copyFxBtn.addEventListener("click", async () => {
+        updateTransformer();
+        if (!fxJs.value) return;
+        try {
+          await navigator.clipboard.writeText(fxJs.value);
+        } catch {
+          fxJs.select();
+          document.execCommand("copy");
+        }
+      });
+
+      setEjemplo();
+      updateTransformer();
+      calculate();
+    </script>
+  </body>
+</html>

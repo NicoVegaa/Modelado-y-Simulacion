@@ -641,6 +641,8 @@
         s = s.replace(/,/g, ".");
         s = s.replace(/\s+/g, "");
         s = s.replace(/Math\.Math\./gi, "Math.");
+        s = s.replace(/Math\.PI/gi, "__PI__");
+        s = s.replace(/Math\.E/gi, "__E__");
         s = s.replace(/Math\.log/gi, "__LOG__");
         s = s.replace(/\bpi\b/gi, "Math.PI");
         s = s.replace(/\be\b/gi, "Math.E");
@@ -653,6 +655,8 @@
         s = s.replace(/\bcos\b/gi, "Math.cos");
         s = s.replace(/\btan\b/gi, "Math.tan");
         s = s.replace(/__LOG__/g, "Math.log");
+        s = s.replace(/__PI__/g, "Math.PI");
+        s = s.replace(/__E__/g, "Math.E");
         return s;
       }
 
