@@ -1,67 +1,44 @@
-# Modelado y Simulacion
+# Calculadora de Modelado y Simulacion (SPA)
 
-Proyecto con implementaciones numericas en Python y HTML.
+Aplicacion web SPA construida con React + TypeScript para resolver ejercicios de la materia.
 
-## Requisitos previos
+## Estado actual
 
-- Python 3.10 o superior
-- pip
+- Navegacion por 8 tabs implementada.
+- Tab Biseccion funcional con:
+  - evaluacion de f(x) con mathjs,
+  - tabla de iteraciones,
+  - resultado final,
+  - grafico de f(x) con raiz marcada,
+  - ejemplos precargados,
+  - boton Limpiar y Copiar resultados CSV.
+- Tab Newton-Raphson funcional inicial con:
+  - derivada analitica opcional,
+  - derivada numerica automatica si no se ingresa f'(x),
+  - tabla de iteraciones,
+  - resultado final,
+  - ejemplos precargados,
+  - boton Limpiar y Copiar resultados CSV.
+- En los campos sensibles se incluyeron micro-aclaratorios en estilo italico/chico.
 
-## Instalar dependencias sin usar el entorno global
+## Requisitos
 
-Este proyecto incluye el archivo `requirements.txt` para instalar dependencias.
+Necesitas Node.js instalado para ejecutar npm.
 
-### 1) Crear entorno virtual
+## Comandos
 
-En la raiz del proyecto:
-
-```powershell
-python -m venv .venv
+```bash
+npm install
+npm run dev
+npm run build
+npm run test
 ```
 
-### 2) Activar entorno virtual
+## Estructura legacy
 
-PowerShell:
+Las implementaciones anteriores en Python/HTML fueron preservadas en la carpeta old.
 
-```powershell
-.\.venv\Scripts\Activate.ps1
-```
+## Pendientes
 
-Si aparece error de permisos en PowerShell, ejecuta una vez:
-
-```powershell
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-```
-
-CMD:
-
-```bat
-.venv\Scripts\activate.bat
-```
-
-### 3) Instalar dependencias
-
-Con el entorno activado:
-
-```powershell
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-```
-
-### 4) Ejecutar los scripts de Python
-
-```powershell
-python BusquedaBinaria.py
-python PuntoFijo.py
-```
-
-### 5) Desactivar el entorno virtual
-
-```powershell
-deactivate
-```
-
-## Notas
-
-- No instales dependencias globalmente para este proyecto.
-- No subas la carpeta `.venv` al repositorio.
+- Implementar completamente: Punto Fijo, Aitken, Lagrange, Dif. Finitas, Newton-Cotes, Montecarlo.
+- Agregar visualizaciones especificas avanzadas (por ejemplo tangentes animadas en Newton-Raphson).

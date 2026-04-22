@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
+  background: radial-gradient(circle at top, #e2e8f0 0%, #f8fafc 45%, #eef2ff 100%);
+  color: #0f172a;
+}
+
+.small-hint {
+  font-size: 0.72rem;
+  line-height: 1.1rem;
+  font-style: italic;
+  color: #475569;
+}
