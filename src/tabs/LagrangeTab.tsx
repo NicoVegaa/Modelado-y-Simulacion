@@ -60,6 +60,21 @@ export const LagrangeTab = () => {
     }
   };
 
+  const handleClear = () => {
+    setNodes([
+      { x: 1, y: 1 },
+      { x: 2, y: 4 },
+      { x: 3, y: 9 },
+    ]);
+    setSourceFunction('');
+    setIntervalMin('0');
+    setIntervalMax('3');
+    setXStar('2.5');
+    setResult(null);
+    setError(null);
+    setMessage(null);
+  };
+
   const handleCopy = async () => {
     if (!result) {
       setError('No hay resultados para copiar.');
@@ -77,20 +92,24 @@ export const LagrangeTab = () => {
   };
 
   const chartData = useMemo(() => {
-    const min = parseNumeric(intervalMin);
-    const max = parseNumeric(intervalMax);
-    const left = Number.isFinite(min) ? min : Math.min(...nodes.map((n) => n.x));
-    const right = Number.isFinite(max) ? max : Math.max(...nodes.map((n) => n.x));
-    const points = buildFunctionPoints('x', left, right, 120).map(({ x }) => ({
-      x,
-      px: evaluateLagrange(nodes, x),
-      fx: sourceFunction.trim() ? Number.NaN : Number.NaN,
-    }));
-    if (sourceFunction.trim()) {
-      const fPoints = buildFunctionPoints(sourceFunction, left, right, 120);
-      return points.map((item, idx) => ({ ...item, fx: fPoints[idx]?.y ?? Number.NaN }));
+    try {
+      const min = parseNumeric(intervalMin);
+      const max = parseNumeric(intervalMax);
+      const left = Number.isFinite(min) ? min : Math.min(...nodes.map((n) => n.x));
+      const right = Number.isFinite(max) ? max : Math.max(...nodes.map((n) => n.x));
+      const points = buildFunctionPoints('x', left, right, 120).map(({ x }) => ({
+        x,
+        px: evaluateLagrange(nodes, x),
+        fx: sourceFunction.trim() ? Number.NaN : Number.NaN,
+      }));
+      if (sourceFunction.trim()) {
+        const fPoints = buildFunctionPoints(sourceFunction, left, right, 120);
+        return points.map((item, idx) => ({ ...item, fx: fPoints[idx]?.y ?? Number.NaN }));
+      }
+      return points;
+    } catch {
+      return [];
     }
-    return points;
   }, [intervalMax, intervalMin, nodes, sourceFunction]);
 
   return (
@@ -158,7 +177,7 @@ export const LagrangeTab = () => {
           <button className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white" type="button" onClick={handleCalculate}>
             Calcular
           </button>
-          <button className="rounded-md bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-900" type="button" onClick={() => setResult(null)}>
+          <button className="rounded-md bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-900" type="button" onClick={handleClear}>
             Limpiar
           </button>
           <button className="rounded-md bg-amber-200 px-4 py-2 text-sm font-semibold text-slate-900" type="button" onClick={handleCopy}>

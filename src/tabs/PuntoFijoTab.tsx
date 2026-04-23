@@ -55,6 +55,16 @@ export const PuntoFijoTab = () => {
     }
   };
 
+  const handleClear = () => {
+    setGx('exp(-x)');
+    setX0('0');
+    setTolerance('1e-4');
+    setMaxIterations('100');
+    setResult(null);
+    setError(null);
+    setMessage(null);
+  };
+
   const handleCopy = async () => {
     if (!result) {
       setError('No hay resultados para copiar.');
@@ -69,9 +79,16 @@ export const PuntoFijoTab = () => {
   };
 
   const chartData = useMemo(() => {
-    const fixedPoints = buildFunctionPoints(gx, -5, 5, 150);
-    const diagonal = fixedPoints.map((item) => ({ ...item, yDiag: item.x }));
-    return diagonal;
+    try {
+      if (!gx.trim()) {
+        return [];
+      }
+      const fixedPoints = buildFunctionPoints(gx, -5, 5, 150);
+      const diagonal = fixedPoints.map((item) => ({ ...item, yDiag: item.x }));
+      return diagonal;
+    } catch {
+      return [];
+    }
   }, [gx]);
 
   const cobwebData = useMemo(() => {
@@ -130,7 +147,7 @@ export const PuntoFijoTab = () => {
           <button type="button" className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white" onClick={handleCalculate}>
             Calcular
           </button>
-          <button type="button" className="rounded-md bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-900" onClick={() => setResult(null)}>
+          <button type="button" className="rounded-md bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-900" onClick={handleClear}>
             Limpiar
           </button>
           <button type="button" className="rounded-md bg-amber-200 px-4 py-2 text-sm font-semibold text-slate-900" onClick={handleCopy}>

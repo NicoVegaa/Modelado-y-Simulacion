@@ -45,6 +45,15 @@ export const AitkenTab = () => {
     }
   };
 
+  const handleClear = () => {
+    setGx('cos(x)');
+    setX0('0.5');
+    setIterationsToShow('10');
+    setResult(null);
+    setError(null);
+    setMessage(null);
+  };
+
   const handleCopy = async () => {
     if (!result) {
       setError('No hay resultados para copiar.');
@@ -102,7 +111,7 @@ export const AitkenTab = () => {
           <button type="button" className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white" onClick={handleCalculate}>
             Calcular
           </button>
-          <button type="button" className="rounded-md bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-900" onClick={() => setResult(null)}>
+          <button type="button" className="rounded-md bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-900" onClick={handleClear}>
             Limpiar
           </button>
           <button type="button" className="rounded-md bg-amber-200 px-4 py-2 text-sm font-semibold text-slate-900" onClick={handleCopy}>

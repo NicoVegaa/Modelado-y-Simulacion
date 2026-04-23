@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { FieldHint } from '../components/common/FieldHint';
 import { IterationTable } from '../components/common/IterationTable';
@@ -70,6 +70,17 @@ export const NewtonCotesTab = () => {
     }
   };
 
+  const handleClear = () => {
+    setFx('sin(x)');
+    setA('0');
+    setB('3.1415926536');
+    setN('10');
+    setSelectedRules(['trapecio']);
+    setResults([]);
+    setError(null);
+    setMessage(null);
+  };
+
   const handleCopy = async () => {
     if (results.length === 0) {
       setError('No hay resultados para copiar.');
@@ -84,7 +95,18 @@ export const NewtonCotesTab = () => {
     setMessage('Comparacion copiada en CSV.');
   };
 
-  const chartPoints = buildFunctionPoints(fx, parseNumeric(a), parseNumeric(b), 120);
+  const chartPoints = useMemo(() => {
+    try {
+      const aValue = parseNumeric(a);
+      const bValue = parseNumeric(b);
+      if (!Number.isFinite(aValue) || !Number.isFinite(bValue) || aValue >= bValue || !fx.trim()) {
+        return [];
+      }
+      return buildFunctionPoints(fx, aValue, bValue, 120);
+    } catch {
+      return [];
+    }
+  }, [fx, a, b]);
 
   return (
     <section className="grid gap-6 lg:grid-cols-[minmax(320px,460px)_1fr]">
@@ -140,7 +162,7 @@ export const NewtonCotesTab = () => {
           <button className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white" type="button" onClick={handleCalculate}>
             Calcular
           </button>
-          <button className="rounded-md bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-900" type="button" onClick={() => setResults([])}>
+          <button className="rounded-md bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-900" type="button" onClick={handleClear}>
             Limpiar
           </button>
           <button className="rounded-md bg-amber-200 px-4 py-2 text-sm font-semibold text-slate-900" type="button" onClick={handleCopy}>

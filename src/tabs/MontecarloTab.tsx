@@ -74,6 +74,21 @@ export const MontecarloTab = () => {
     };
   }, [result]);
 
+  const handleClear = () => {
+    setMode('pi');
+    setExpression('sin(x)');
+    setSecondExpression('0');
+    setA('-1');
+    setB('1');
+    setC('-1');
+    setD('1');
+    setN('5000');
+    setConfidence('95%');
+    setResult(null);
+    setError(null);
+    setMessage(null);
+  };
+
   const handleCopy = async () => {
     if (!result) {
       setError('No hay resultados para copiar.');
@@ -167,7 +182,7 @@ export const MontecarloTab = () => {
           <button className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white" type="button" onClick={handleCalculate}>
             Calcular
           </button>
-          <button className="rounded-md bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-900" type="button" onClick={() => setResult(null)}>
+          <button className="rounded-md bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-900" type="button" onClick={handleClear}>
             Limpiar
           </button>
           <button className="rounded-md bg-amber-200 px-4 py-2 text-sm font-semibold text-slate-900" type="button" onClick={handleCopy}>

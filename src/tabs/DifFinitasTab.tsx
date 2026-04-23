@@ -60,6 +60,19 @@ export const DifFinitasTab = () => {
 
   const chartData = useMemo(() => records.map((item) => ({ x: item.x, fx: item.fx, dfx: item.derivativeApprox })), [records]);
 
+  const handleClear = () => {
+    setMode('funcion');
+    setExpression('sin(x)');
+    setXList('0,0.5,1,1.5,2');
+    setYList('');
+    setH('0.5');
+    setOrder('1');
+    setMethod('central');
+    setRecords([]);
+    setError(null);
+    setMessage(null);
+  };
+
   const copyResults = async () => {
     if (records.length === 0) {
       setError('No hay resultados para copiar.');
@@ -147,7 +160,7 @@ export const DifFinitasTab = () => {
           <button className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white" type="button" onClick={handleCalculate}>
             Calcular
           </button>
-          <button className="rounded-md bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-900" type="button" onClick={() => setRecords([])}>
+          <button className="rounded-md bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-900" type="button" onClick={handleClear}>
             Limpiar
           </button>
           <button className="rounded-md bg-amber-200 px-4 py-2 text-sm font-semibold text-slate-900" type="button" onClick={copyResults}>
