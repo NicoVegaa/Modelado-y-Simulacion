@@ -776,6 +776,14 @@
                 </select>
               </label>
             </div>
+            <div class="grid-2">
+              <label>Error objetivo (opcional)
+                <input id="int-target" type="number" value="" placeholder="0.01" step="any">
+              </label>
+              <label>Máx. subintervalos
+                <input id="int-max-n" type="number" value="1048576" step="1">
+              </label>
+            </div>
             <label>Regla rectángulos
               <select id="int-regla">
                 <option value="midpoint">Midpoint</option>
@@ -1381,6 +1389,37 @@
         return 4;
       }
 
+      function normalizeIntegrationN(method, n) {
+        if (method === "simpson" && n % 2 !== 0) return n + 1;
+        return n;
+      }
+
+      function integrationEstimate(f, method, a, b, n, rule) {
+        const p = methodOrder(method, rule);
+        const iN = integrate(f, method, a, b, n, rule);
+        const i2N = integrate(f, method, a, b, 2 * n, rule);
+        const i4N = integrate(f, method, a, b, 4 * n, rule);
+        const errEst = Math.abs(i2N - iN) / (2 ** p - 1);
+        const den = Math.abs(i2N - iN);
+        const num = Math.abs(i4N - i2N);
+        const pObs = den > 0 && num > 0 ? Math.log2(den / num) : null;
+        return { p, iN, i2N, i4N, errEst, pObs };
+      }
+
+      function refineIntegrationN(f, method, a, b, n, rule, target, maxN) {
+        let curN = normalizeIntegrationN(method, n);
+        const rows = [];
+        while (curN <= maxN) {
+          const est = integrationEstimate(f, method, a, b, curN, rule);
+          rows.push([curN, fmt(est.iN), fmt(est.i2N), fmt(est.i4N), fmt(est.errEst)]);
+          if (est.errEst <= target) return { n: curN, est, rows, reached: true };
+          curN *= 2;
+        }
+        const lastN = rows.length ? rows[rows.length - 1][0] : curN;
+        const est = integrationEstimate(f, method, a, b, lastN, rule);
+        return { n: lastN, est, rows, reached: false };
+      }
+
       class LCG {
         constructor(seed = 1234567) {
           this.state = (seed >>> 0) || 1234567;
@@ -1891,33 +1930,45 @@
           const f = compileExpr(document.getElementById("int-f").value, ["x"]);
           const a = Number(document.getElementById("int-a").value);
           const b = Number(document.getElementById("int-b").value);
-          const n = Number(document.getElementById("int-n").value);
+          let n = Number(document.getElementById("int-n").value);
+          const targetRaw = document.getElementById("int-target").value.trim();
+          const target = targetRaw === "" ? null : Number(targetRaw);
+          const maxN = Number(document.getElementById("int-max-n").value);
           const method = document.getElementById("int-metodo").value;
           const rule = document.getElementById("int-regla").value;
           if (!(b > a)) throw new Error("Debe cumplirse b > a.");
           if (!(n > 0 && Number.isInteger(n))) throw new Error("n inválido.");
-          const iN = integrate(f, method, a, b, n, rule);
-          const p = methodOrder(method, rule);
-          const i2N = integrate(f, method, a, b, 2 * n, rule);
-          const i4N = integrate(f, method, a, b, 4 * n, rule);
-          const errEst = Math.abs(i2N - iN) / (2 ** p - 1);
-          const den = Math.abs(i2N - iN);
-          const num = Math.abs(i4N - i2N);
-          const pObs = den > 0 && num > 0 ? Math.log2(den / num) : null;
+          if (targetRaw !== "" && !(target > 0)) throw new Error("Error objetivo inválido.");
+          if (!(maxN > 0 && Number.isInteger(maxN))) throw new Error("Máx. subintervalos inválido.");
+          n = normalizeIntegrationN(method, n);
+          if (n > maxN) throw new Error("El n inicial no puede superar el máximo de subintervalos.");
 
-          setResult(
-            "int-out",
-            [
-              `Integral aprox: ${fmt(iN)}`,
-              `Método: ${method}${method === "rectangulos" ? " (" + rule + ")" : ""}`,
-              `Orden teórico: ${p}`,
-              `Error estimado (Richardson): ${fmt(errEst)}`,
-              pObs === null ? "Orden observado: n/d" : `Orden observado: ${fmt(pObs, 4)}`,
-            ].join("\n"),
-            "ok"
+          const refined = target === null
+            ? { n, est: integrationEstimate(f, method, a, b, n, rule), rows: null, reached: true }
+            : refineIntegrationN(f, method, a, b, n, rule, target, maxN);
+          n = refined.n;
+          const { p, iN, i2N, i4N, errEst, pObs } = refined.est;
+
+          const lines = [
+            `Integral aprox: ${fmt(iN)}`,
+            `Método: ${method}${method === "rectangulos" ? " (" + rule + ")" : ""}`,
+            `n usado: ${n}`,
+            `Orden teórico: ${p}`,
+            `Error estimado (Richardson): ${fmt(errEst)}`,
+            pObs === null ? "Orden observado: n/d" : `Orden observado: ${fmt(pObs, 4)}`,
+          ];
+          if (target !== null) {
+            lines.push(`Error objetivo: ${fmt(target)}`);
+            lines.push(refined.reached ? "Objetivo alcanzado: sí" : `Objetivo alcanzado: no (máx. n=${maxN})`);
+          }
+          setResult("int-out", lines.join("\n"), refined.reached ? "ok" : "err");
+
+          renderTable(
+            "int-table",
+            ["n", "I_n", "I_2n", "I_4n", "err est."],
+            refined.rows || [[n, fmt(iN), fmt(i2N), fmt(i4N), fmt(errEst)]],
+            500
           );
-
-          renderTable("int-table", ["n", "I_n", "I_2n", "I_4n", "err est."], [[n, fmt(iN), fmt(i2N), fmt(i4N), fmt(errEst)]]);
 
           const curve = sampleFunction(f, a, b, 420);
           const ys = curve.map(p0 => p0[1]).concat([0]);
