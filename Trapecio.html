@@ -1,0 +1,572 @@
+﻿<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Trapecio Simple y Compuesto</title>
+    <style>
+      :root {
+        --bg: #0f1a2b;
+        --panel: #132238;
+        --grid: #1e3352;
+        --accent: #ffb703;
+        --accent-2: #fb8500;
+        --text: #e9f1ff;
+        --muted: #9fb5d1;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: radial-gradient(1200px 600px at 20% 10%, #1d2f4a, var(--bg));
+        color: var(--text);
+        font-family: "Trebuchet MS", "Segoe UI", Tahoma, sans-serif;
+      }
+
+      header {
+        padding: 18px 22px 6px 22px;
+      }
+
+      h1 {
+        margin: 0;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+      }
+
+      .sub {
+        margin-top: 6px;
+        color: var(--muted);
+      }
+
+      .wrap {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 16px;
+        padding: 14px 22px 24px 22px;
+      }
+
+      .panel {
+        background: linear-gradient(160deg, #162a46, #10233b);
+        border: 1px solid #1b3253;
+        border-radius: 12px;
+        padding: 14px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      }
+
+      .controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 12px;
+      }
+
+      label {
+        font-size: 13px;
+        color: var(--muted);
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid #294369;
+        background: #0f2036;
+        color: var(--text);
+      }
+
+      .btns {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      button {
+        padding: 9px 12px;
+        border-radius: 8px;
+        border: none;
+        background: var(--accent);
+        color: #1a1200;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      button.secondary {
+        background: #2a476f;
+        color: var(--text);
+      }
+
+      .table {
+        max-height: 440px;
+        overflow: auto;
+        border-radius: 10px;
+        border: 1px solid #1b3253;
+        margin-top: 10px;
+      }
+
+      canvas {
+        width: 100%;
+        height: 280px;
+        background: #0b192c;
+        border-radius: 10px;
+        border: 1px solid #1b3253;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      th,
+      td {
+        padding: 8px 10px;
+        border-bottom: 1px solid #1b3253;
+        text-align: right;
+      }
+
+      th {
+        position: sticky;
+        top: 0;
+        background: #142742;
+        text-align: left;
+      }
+
+      .error-box {
+        margin-top: 10px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 120, 120, 0.4);
+        background: rgba(120, 30, 30, 0.35);
+        color: #ffd6d6;
+        font-size: 13px;
+        display: none;
+      }
+
+      .results {
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px solid #1b3253;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 12px;
+      }
+
+      .note {
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      @media (max-width: 980px) {
+        .wrap {
+          grid-template-columns: 1fr;
+        }
+        .results {
+          grid-template-columns: 1fr;
+        }
+        canvas {
+          height: 240px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Trapecio Simple y Compuesto</h1>
+      <div class="sub">Aproximación de integrales con regla del trapecio.</div>
+    </header>
+
+    <div class="wrap">
+      <section class="panel">
+        <div class="controls">
+          <div>
+            <label for="fxText">Función (texto)</label>
+            <input id="fxText" placeholder="ln(x) - 1" />
+          </div>
+          <div>
+            <label for="fx">f(x) lista</label>
+            <input id="fx" value="Math.sin(x)" />
+          </div>
+          <div>
+            <label for="a">a</label>
+            <input id="a" value="0" />
+          </div>
+          <div>
+            <label for="b">b</label>
+            <input id="b" value="3.1416" />
+          </div>
+          <div>
+            <label for="n">n (segmentos)</label>
+            <input id="n" value="6" />
+          </div>
+        </div>
+        <div class="btns">
+          <button id="calc">Calcular</button>
+          <button id="useFx" class="secondary">Usar f(x)</button>
+          <button id="copyFx" class="secondary">Copiar f(x)</button>
+          <button id="expand" class="secondary">Agrandar tabla</button>
+        </div>
+        <div id="errorBox" class="error-box" role="alert" aria-live="polite"></div>
+        <div class="results">
+          <div>
+            <label>Trapecio simple</label>
+            <input id="simpleVal" readonly />
+          </div>
+          <div>
+            <label>Error trunc. simple</label>
+            <input id="simpleErr" readonly />
+          </div>
+          <div>
+            <label>Trapecio compuesto</label>
+            <input id="compVal" readonly />
+          </div>
+          <div>
+            <label>Error trunc. compuesto</label>
+            <input id="compErr" readonly />
+          </div>
+        </div>
+        <div class="note">Error de truncamiento estimado con max |f''(x)| en [a,b].</div>
+      </section>
+
+      <section class="panel">
+        <canvas id="plot" width="800" height="280"></canvas>
+        <div class="table">
+          <table>
+            <thead>
+              <tr>
+                <th>i</th>
+                <th>x_i</th>
+                <th>f(x_i)</th>
+                <th>peso</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const fxText = document.getElementById("fxText");
+      const fxInput = document.getElementById("fx");
+      const aInput = document.getElementById("a");
+      const bInput = document.getElementById("b");
+      const nInput = document.getElementById("n");
+      const canvas = document.getElementById("plot");
+      const ctx = canvas.getContext("2d");
+      const tbody = document.getElementById("tbody");
+      const errorBox = document.getElementById("errorBox");
+      const simpleVal = document.getElementById("simpleVal");
+      const compVal = document.getElementById("compVal");
+      const simpleErr = document.getElementById("simpleErr");
+      const compErr = document.getElementById("compErr");
+
+      const calcBtn = document.getElementById("calc");
+      const useFxBtn = document.getElementById("useFx");
+      const copyFxBtn = document.getElementById("copyFx");
+      const expandBtn = document.getElementById("expand");
+
+      function showError(msg) {
+        errorBox.textContent = msg;
+        errorBox.style.display = "block";
+      }
+
+      function clearError() {
+        errorBox.textContent = "";
+        errorBox.style.display = "none";
+      }
+
+      function convertTextToJs(text) {
+        let s = text.trim();
+        if (!s) return "";
+        s = s.replace(/,/g, ".");
+        s = s.replace(/\s+/g, "");
+        s = s.replace(/Math\.Math\./gi, "Math.");
+        s = s.replace(/Math\.PI/gi, "__PI__");
+        s = s.replace(/Math\.E/gi, "__E__");
+        s = s.replace(/Math\.log/gi, "__LOG__");
+        s = s.replace(/\bpi\b/gi, "Math.PI");
+        s = s.replace(/\be\b/gi, "Math.E");
+        s = s.replace(/\bln\b/gi, "Math.log");
+        s = s.replace(/\blog\b/gi, "Math.log");
+        s = s.replace(/\bexp\b/gi, "Math.exp");
+        s = s.replace(/\bsqrt\b/gi, "Math.sqrt");
+        s = s.replace(/\babs\b/gi, "Math.abs");
+        s = s.replace(/\bsin\b/gi, "Math.sin");
+        s = s.replace(/\bcos\b/gi, "Math.cos");
+        s = s.replace(/\btan\b/gi, "Math.tan");
+        s = s.replace(/__LOG__/g, "Math.log");
+        s = s.replace(/__PI__/g, "Math.PI");
+        s = s.replace(/__E__/g, "Math.E");
+        s = s.replace(/\^/g, "**");
+        return s;
+      }
+
+      function parseFunction(expr) {
+        return new Function("x", `return ${expr};`);
+      }
+
+      function f2nd(f, x, h) {
+        return (f(x + h) - 2 * f(x) + f(x - h)) / (h * h);
+      }
+
+      function maxSecondDerivative(f, a, b) {
+        const samples = 200;
+        const h = Math.max(1e-4, (b - a) / 2000);
+        let max = 0;
+        for (let i = 0; i <= samples; i++) {
+          const x = a + (b - a) * (i / samples);
+          const val = Math.abs(f2nd(f, x, h));
+          if (Number.isFinite(val)) max = Math.max(max, val);
+        }
+        return max;
+      }
+
+      function updateTable(xs, fvals, weights) {
+        tbody.innerHTML = "";
+        for (let i = 0; i < xs.length; i++) {
+          const row = document.createElement("tr");
+          row.innerHTML = `<td>${i}</td><td>${xs[i].toFixed(10)}</td><td>${fvals[
+            i
+          ].toFixed(10)}</td><td>${weights[i]}</td>`;
+          tbody.appendChild(row);
+        }
+      }
+
+      function openTableWindow(xs, fvals, weights) {
+        const w = window.open("", "_blank");
+        if (!w) return;
+        const doc = w.document;
+        doc.title = "Tabla Trapecio (extendida)";
+        const style = doc.createElement("style");
+        style.textContent =
+          "body { font-family: \"Trebuchet MS\", \"Segoe UI\", Tahoma, sans-serif; padding: 16px; }" +
+          "h1 { margin: 0 0 12px 0; }" +
+          "table { width: 100%; border-collapse: collapse; font-size: 13px; }" +
+          "th, td { padding: 8px 10px; border-bottom: 1px solid #ddd; text-align: right; }" +
+          "th { text-align: left; background: #f2f2f2; position: sticky; top: 0; }" +
+          "td.formula { text-align: left; font-family: Consolas, monospace; }";
+        if (doc.head) doc.head.appendChild(style);
+
+        const h1 = doc.createElement("h1");
+        h1.textContent = "Tabla extendida - Trapecio";
+        if (doc.body) doc.body.appendChild(h1);
+
+        const table = doc.createElement("table");
+        table.innerHTML = `<thead><tr><th>i</th><th>x_i</th><th>f(x_i)</th><th>peso</th><th>término</th></tr></thead>`;
+        const tb = doc.createElement("tbody");
+        for (let i = 0; i < xs.length; i++) {
+          const tr = doc.createElement("tr");
+          tr.innerHTML = `<td>${i}</td><td>${xs[i].toFixed(10)}</td><td>${fvals[
+            i
+          ].toFixed(10)}</td><td>${weights[i]}</td><td class=\"formula\">${weights[i]}·f(${xs[
+            i
+          ].toFixed(4)})</td>`;
+          tb.appendChild(tr);
+        }
+        table.appendChild(tb);
+        if (doc.body) doc.body.appendChild(table);
+      }
+
+      function renderPlot(f, a, b, n) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#0b192c";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const samples = 200;
+        const xs = [];
+        const ys = [];
+        let minY = Infinity;
+        let maxY = -Infinity;
+        for (let i = 0; i <= samples; i++) {
+          const x = a + (b - a) * (i / samples);
+          const y = f(x);
+          xs.push(x);
+          ys.push(y);
+          if (Number.isFinite(y)) {
+            minY = Math.min(minY, y);
+            maxY = Math.max(maxY, y);
+          }
+        }
+        minY = Math.min(minY, 0);
+        maxY = Math.max(maxY, 0);
+        const pad = (maxY - minY) * 0.1 || 1;
+        minY -= pad;
+        maxY += pad;
+
+        const mapX = (x) => ((x - a) / (b - a)) * canvas.width;
+        const mapY = (y) => canvas.height - ((y - minY) / (maxY - minY)) * canvas.height;
+
+        // Grid + labels
+        ctx.strokeStyle = "#1e3352";
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 10; i++) {
+          const t = i / 10;
+          const y = t * canvas.height;
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(canvas.width, y);
+          ctx.stroke();
+        }
+        for (let i = 0; i <= 10; i++) {
+          const t = i / 10;
+          const xg = t * canvas.width;
+          ctx.beginPath();
+          ctx.moveTo(xg, 0);
+          ctx.lineTo(xg, canvas.height);
+          ctx.stroke();
+        }
+        ctx.fillStyle = "#9fb5d1";
+        ctx.font = "12px Trebuchet MS";
+        for (let i = 0; i <= 4; i++) {
+          const t = i / 4;
+          const xv = a + (b - a) * t;
+          const px = mapX(xv);
+          ctx.fillText(xv.toFixed(2), px + 4, canvas.height - 6);
+        }
+        for (let i = 0; i <= 4; i++) {
+          const t = i / 4;
+          const yv = minY + (maxY - minY) * (1 - t);
+          const py = mapY(yv);
+          ctx.fillText(yv.toFixed(2), 6, py - 4);
+        }
+
+        // Trapezoids
+        const h = (b - a) / n;
+        ctx.fillStyle = "rgba(255, 183, 3, 0.25)";
+        for (let i = 0; i < n; i++) {
+          const x0 = a + h * i;
+          const x1 = x0 + h;
+          const y0 = f(x0);
+          const y1 = f(x1);
+          ctx.beginPath();
+          ctx.moveTo(mapX(x0), mapY(0));
+          ctx.lineTo(mapX(x0), mapY(y0));
+          ctx.lineTo(mapX(x1), mapY(y1));
+          ctx.lineTo(mapX(x1), mapY(0));
+          ctx.closePath();
+          ctx.fill();
+        }
+
+        // Function curve
+        ctx.strokeStyle = "#4cc9f0";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ys.forEach((y, i) => {
+          const px = mapX(xs[i]);
+          const py = mapY(y);
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        });
+        ctx.stroke();
+
+        // Axis
+        ctx.strokeStyle = "#9fb5d1";
+        ctx.lineWidth = 1;
+        const y0 = mapY(0);
+        ctx.beginPath();
+        ctx.moveTo(0, y0);
+        ctx.lineTo(canvas.width, y0);
+        ctx.stroke();
+
+        // Mark intersections at x_i
+        ctx.strokeStyle = "rgba(159, 181, 209, 0.8)";
+        ctx.fillStyle = "#ffb703";
+        for (let i = 0; i <= n; i++) {
+          const x = a + h * i;
+          const y = f(x);
+          const px = mapX(x);
+          const py = mapY(y);
+          ctx.beginPath();
+          ctx.moveTo(px, mapY(0));
+          ctx.lineTo(px, py);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(px, py, 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      function calculate() {
+        try {
+          const fxExpr = fxInput.value.trim();
+          if (!fxExpr) throw new Error("f(x) inválida.");
+          const f = parseFunction(fxExpr);
+          const a = parseFloat(aInput.value);
+          const b = parseFloat(bInput.value);
+          const n = parseInt(nInput.value, 10);
+          if (!Number.isFinite(a) || !Number.isFinite(b) || a === b)
+            throw new Error("a y b inválidos. Asegurate de que a ≠ b.");
+          if (!Number.isFinite(n) || n <= 0)
+            throw new Error("n inválido. Usá un entero positivo.");
+          clearError();
+
+          // Simple
+          const fa = f(a);
+          const fb = f(b);
+          const simple = ((b - a) * (fa + fb)) / 2;
+
+          // Composite
+          const h = (b - a) / n;
+          let sum = 0;
+          const xs = [];
+          const fvals = [];
+          const weights = [];
+          for (let i = 0; i <= n; i++) {
+            const x = a + h * i;
+            const fx = f(x);
+            let w = 1;
+            if (i === 0 || i === n) w = 1;
+            else w = 2;
+            xs.push(x);
+            fvals.push(fx);
+            weights.push(w);
+            sum += w * fx;
+          }
+          const comp = (h / 2) * sum;
+
+          const maxF2 = maxSecondDerivative(f, a, b);
+          const simpleE = (Math.pow(b - a, 3) / 12) * maxF2;
+          const compE = (Math.pow(b - a, 3) / (12 * n * n)) * maxF2;
+
+          simpleVal.value = simple.toFixed(10);
+          compVal.value = comp.toFixed(10);
+          simpleErr.value = simpleE.toFixed(10);
+          compErr.value = compE.toFixed(10);
+
+          updateTable(xs, fvals, weights);
+          renderPlot(f, a, b, n);
+          expandBtn.onclick = () => openTableWindow(xs, fvals, weights);
+        } catch (err) {
+          showError(err.message);
+        }
+      }
+
+      fxText.addEventListener("input", () => {
+        fxInput.value = convertTextToJs(fxText.value);
+      });
+      useFxBtn.addEventListener("click", () => {
+        fxInput.value = convertTextToJs(fxText.value);
+      });
+      copyFxBtn.addEventListener("click", async () => {
+        const js = convertTextToJs(fxText.value);
+        if (!js) return;
+        try {
+          await navigator.clipboard.writeText(js);
+        } catch {
+          fxInput.select();
+          document.execCommand("copy");
+        }
+      });
+      calcBtn.addEventListener("click", calculate);
+
+      calculate();
+    </script>
+  </body>
+</html>

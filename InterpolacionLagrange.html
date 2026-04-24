@@ -442,7 +442,6 @@
         if (!s) return "";
         s = s.replace(/,/g, ".");
         s = s.replace(/\s+/g, "");
-        s = s.replace(/Math\.Math\./gi, "Math.");
         s = s.replace(/Math\.PI/gi, "__PI__");
         s = s.replace(/Math\.E/gi, "__E__");
         s = s.replace(/Math\.log/gi, "__LOG__");
@@ -460,6 +459,7 @@
         s = s.replace(/__PI__/g, "Math.PI");
         s = s.replace(/__E__/g, "Math.E");
         s = s.replace(/\^/g, "**");
+        s = s.replace(/Math\.Math\./gi, "Math.");
         return s;
       }
 
