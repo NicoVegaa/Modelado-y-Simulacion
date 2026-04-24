@@ -184,6 +184,22 @@ const formulasByMethod: Record<MethodId, FormulaData> = {
         ],
         bullets: ['Se requiere n par para Simpson 1/3 compuesta.'],
       },
+      {
+        title: 'Simpson 3/8 simple',
+        equations: [
+          '\\int_{a}^{b} f(x)\\,dx \\;\\approx\\; \\frac{3h}{8}\\,\\big[\\,f(x_0) + 3f(x_1) + 3f(x_2) + f(x_3)\\,\\big]',
+          'h = \\frac{b-a}{3}, \\, x_i = a + i h',
+          'E = -\\frac{(b-a)^5}{6480}\\, f^{(4)}(\\xi), \\, \\xi \\in (a,b)',
+        ],
+      },
+      {
+        title: 'Simpson 3/8 compuesta (n multiplo de 3)',
+        equations: [
+          '\\int_{a}^{b} f(x)\\,dx \\;\\approx\\; \\frac{3h}{8}\\left[ f(x_0) + 3\\sum_{\\substack{i=1 \\ i \\not\\equiv 0\\ (3)}}^{n-1} f(x_i) + 2\\sum_{\\substack{i=3 \\ i \\equiv 0\\ (3)}}^{n-3} f(x_i) + f(x_n) \\right]',
+          'E = -\\frac{(b-a)}{80}\\,h^4\\, f^{(4)}(\\xi), \\, \\xi \\in (a,b)',
+        ],
+        bullets: ['Se requiere n multiplo de 3 para Simpson 3/8 compuesta.'],
+      },
     ],
   },
   montecarlo: {

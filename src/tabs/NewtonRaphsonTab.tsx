@@ -155,7 +155,7 @@ export const NewtonRaphsonTab = () => {
             value={fx}
             onChange={(event) => setFx(event.target.value)}
           />
-          <FieldHint text="acepta sin, cos, exp, log, sqrt, pi y e" />
+          <FieldHint text="acepta sin, cos, exp, log/Log, ln/Ln, sqrt, pi y e" />
         </label>
 
         <label className="block text-sm font-medium text-slate-700">

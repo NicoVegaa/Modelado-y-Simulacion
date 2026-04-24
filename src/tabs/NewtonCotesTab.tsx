@@ -135,7 +135,7 @@ export const NewtonCotesTab = () => {
         <label className="block text-sm font-medium text-slate-700">
           f(x)
           <input className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" value={fx} onChange={(event) => setFx(event.target.value)} />
-          <FieldHint text="acepta funciones: sin, cos, exp, log, sqrt" />
+          <FieldHint text="acepta funciones: sin, cos, exp, log/Log, ln/Ln, sqrt" />
         </label>
 
         <div className="grid grid-cols-3 gap-2">

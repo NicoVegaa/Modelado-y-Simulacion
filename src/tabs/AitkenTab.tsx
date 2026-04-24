@@ -99,7 +99,7 @@ export const AitkenTab = () => {
         <label className="block text-sm font-medium text-slate-700">
           g(x)
           <input className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" value={gx} onChange={(event) => setGx(event.target.value)} />
-          <FieldHint text="admite funciones math.js: sin, cos, exp, log" />
+          <FieldHint text="admite funciones math.js: sin, cos, exp, log/Log, ln/Ln" />
         </label>
 
         <label className="block text-sm font-medium text-slate-700">
