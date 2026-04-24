@@ -1,0 +1,2043 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Laboratorio de Modelado y Simulación</title>
+  <style>
+    :root {
+      --bg: #f2ede4;
+      --bg-strong: #e4dccf;
+      --panel: #fffaf1;
+      --ink: #12211c;
+      --muted: #5d6a67;
+      --line: #c9c2b6;
+      --accent: #0c7b72;
+      --accent-2: #cf5b37;
+      --ok: #1b8f4d;
+      --err: #b0392a;
+      --shadow: 0 12px 34px rgba(18, 33, 28, 0.12);
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "Fira Sans", "Trebuchet MS", sans-serif;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(12, 123, 114, 0.12), transparent 36%),
+        radial-gradient(circle at 88% 16%, rgba(207, 91, 55, 0.13), transparent 34%),
+        linear-gradient(160deg, var(--bg), var(--bg-strong));
+      min-height: 100vh;
+    }
+
+    .page {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 14px 18px 40px;
+    }
+
+    .tabs {
+      margin-top: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+      gap: 8px;
+    }
+
+    .tab-btn {
+      appearance: none;
+      border: 0;
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: #efe7d9;
+      color: #213b35;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+      box-shadow: 0 2px 0 rgba(18, 33, 28, 0.08);
+    }
+
+    .tab-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(18, 33, 28, 0.12);
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, var(--accent), #0f9388);
+      color: #f8fffd;
+    }
+
+    .panel {
+      margin-top: 14px;
+      display: none;
+      animation: panelIn .24s ease;
+    }
+
+    .panel.active { display: block; }
+
+    @keyframes panelIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .card-head {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(130deg, rgba(12, 123, 114, 0.12), rgba(207, 91, 55, 0.10));
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: baseline;
+      flex-wrap: wrap;
+    }
+
+    .card-head h2 {
+      margin: 0;
+      font-size: 1.06rem;
+      font-family: "Merriweather", Georgia, serif;
+    }
+
+    .card-head span {
+      color: var(--muted);
+      font-size: .92rem;
+    }
+
+    .card-body {
+      padding: 18px 18px 16px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 28px;
+      align-items: start;
+    }
+
+    .controls {
+      display: grid;
+      gap: 14px;
+      align-content: start;
+      min-width: 0;
+      max-width: 920px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    @media (max-width: 540px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    label {
+      display: grid;
+      gap: 5px;
+      font-size: .9rem;
+      color: #324540;
+      font-weight: 600;
+    }
+
+    input, select, textarea, button {
+      font: inherit;
+    }
+
+    input, select, textarea {
+      border: 1px solid #b9b1a5;
+      background: #fffcf7;
+      border-radius: 10px;
+      padding: 8px 10px;
+      color: var(--ink);
+      outline: none;
+      transition: border-color .16s ease, box-shadow .16s ease;
+    }
+
+    textarea { resize: vertical; min-height: 68px; }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(12, 123, 114, 0.16);
+    }
+
+    .btn-run {
+      border: 0;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(135deg, var(--accent), #0f9388);
+      cursor: pointer;
+      box-shadow: 0 8px 18px rgba(12, 123, 114, 0.25);
+      transition: transform .17s ease, filter .17s ease;
+    }
+
+    .btn-run:hover { transform: translateY(-2px); filter: saturate(1.08); }
+
+    .btn-run:active { transform: translateY(0); }
+
+    .result {
+      border: 1px dashed #b4ac9f;
+      border-radius: 10px;
+      background: #fcf8f0;
+      padding: 8px 10px;
+      font-size: .89rem;
+      line-height: 1.35;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      min-height: 68px;
+    }
+
+    .result.ok { border-color: rgba(27, 143, 77, 0.45); color: #155c35; background: #f2fbf6; }
+    .result.err { border-color: rgba(176, 57, 42, 0.48); color: #7a2217; background: #fef5f4; }
+
+    .plot-wrap {
+      display: grid;
+      grid-template-rows: minmax(360px, auto) auto;
+      gap: 10px;
+      align-content: start;
+      min-width: 0;
+      border-top: 1px solid #d9d1c4;
+      padding-top: 14px;
+    }
+
+    canvas.plot {
+      width: 100%;
+      height: 440px;
+      border-radius: 12px;
+      border: 1px solid #b7b0a5;
+      background: linear-gradient(180deg, #fffdf9, #f6f2ea);
+      display: block;
+    }
+
+    @media (max-width: 1260px) {
+      canvas.plot { height: 360px; }
+      .plot-wrap { grid-template-rows: minmax(320px, auto) auto; }
+    }
+
+    .table-box {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: auto;
+      max-height: 200px;
+      max-width: 100%;
+      background: #fff;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: .82rem;
+      min-width: 0;
+    }
+
+    th, td {
+      border-bottom: 1px solid #e2dbcf;
+      padding: 6px 8px;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      background: #efe7d9;
+      color: #1f312c;
+      text-align: center;
+      font-weight: 700;
+      z-index: 1;
+    }
+
+    .math-label {
+      white-space: nowrap;
+      letter-spacing: 0.01em;
+    }
+
+    .math-label sub {
+      font-size: 0.78em;
+      line-height: 0;
+      vertical-align: -0.35em;
+    }
+
+    .math-label sup {
+      font-size: 0.78em;
+      line-height: 0;
+      vertical-align: 0.45em;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: .8rem;
+      line-height: 1.3;
+    }
+
+    .inline {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: end;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: .75rem;
+      background: #e8f6f4;
+      color: #145f58;
+      border: 1px solid rgba(12, 123, 114, .28);
+    }
+
+    .mode-group {
+      border: 1px solid #d4ccbf;
+      border-radius: 10px;
+      padding: 8px;
+      background: #fffdf8;
+      display: grid;
+      gap: 8px;
+    }
+
+    .formula-box {
+      border: 1px solid #d8cfbf;
+      border-radius: 10px;
+      background: #fffefb;
+      padding: 8px 10px;
+    }
+
+    .formula-box summary {
+      cursor: pointer;
+      font-weight: 700;
+      color: #1e4942;
+      user-select: none;
+    }
+
+    .formula-box[open] summary {
+      margin-bottom: 6px;
+    }
+
+    .formula-list {
+      margin: 0;
+      padding: 0 0 0 14px;
+      display: grid;
+      gap: 5px;
+      color: #294a45;
+      font-size: 0.9rem;
+      line-height: 1.35;
+    }
+
+    .formula-list code {
+      background: #f3eee3;
+      border: 1px solid #ded5c7;
+      border-radius: 6px;
+      padding: 1px 5px;
+      font-size: 0.88em;
+      color: #21453f;
+    }
+
+    .formula-list .eq {
+      display: inline-block;
+      background: #f3eee3;
+      border: 1px solid #ded5c7;
+      border-radius: 6px;
+      padding: 2px 7px;
+      color: #21453f;
+      font-family: "Cambria Math", "STIX Two Math", "Times New Roman", serif;
+      font-size: 0.98em;
+      line-height: 1.25;
+    }
+
+    .formula-list .eq sub {
+      font-size: 0.8em;
+      line-height: 0;
+      vertical-align: -0.3em;
+    }
+
+    .formula-list .eq sup {
+      font-size: 0.8em;
+      line-height: 0;
+      vertical-align: 0.45em;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <nav class="tabs" aria-label="Metodos">
+      <button class="tab-btn active" data-tab="tab-biseccion">Bisección</button>
+      <button class="tab-btn" data-tab="tab-punto-fijo">Punto Fijo</button>
+      <button class="tab-btn" data-tab="tab-newton">Newton</button>
+      <button class="tab-btn" data-tab="tab-aitken">Aitken</button>
+      <button class="tab-btn" data-tab="tab-lagrange">Lagrange</button>
+      <button class="tab-btn" data-tab="tab-derivacion">Derivación</button>
+      <button class="tab-btn" data-tab="tab-integracion">Integración</button>
+      <button class="tab-btn" data-tab="tab-montecarlo">Monte Carlo</button>
+    </nav>
+
+    <section id="tab-biseccion" class="panel active">
+      <div class="card">
+        <div class="card-head">
+          <h2>Bisección (búsqueda binaria de raíces)</h2>
+          <span><span class="pill">Convergencia lineal</span></span>
+        </div>
+        <div class="card-body">
+          <div class="controls">
+            <details class="formula-box">
+              <summary>Ver fórmulas</summary>
+              <ul class="formula-list">
+                <li><span class="eq">c<sub>k</sub> = (a<sub>k</sub> + b<sub>k</sub>)/2</span></li>
+                <li>Si <span class="eq">f(a<sub>k</sub>)f(c<sub>k</sub>) &lt; 0</span> entonces <span class="eq">[a<sub>k+1</sub>, b<sub>k+1</sub>] = [a<sub>k</sub>, c<sub>k</sub>]</span>, si no <span class="eq">[a<sub>k+1</sub>, b<sub>k+1</sub>] = [c<sub>k</sub>, b<sub>k</sub>]</span>.</li>
+                <li><span class="eq">|x* - c<sub>k</sub>| &le; (b<sub>k</sub> - a<sub>k</sub>)/2</span></li>
+                <li>Iteraciones teóricas: <span class="eq">N &ge; &lceil;log<sub>2</sub>((b-a)/tol)&rceil;</span></li>
+              </ul>
+            </details>
+            <label>f(x)
+              <input id="bis-f" value="x^3 - x - 2">
+            </label>
+            <div class="grid-2">
+              <label>a
+                <input id="bis-a" type="number" value="1" step="any">
+              </label>
+              <label>b
+                <input id="bis-b" type="number" value="2" step="any">
+              </label>
+            </div>
+            <div class="grid-2">
+              <label>Tolerancia
+                <input id="bis-tol" type="number" value="1e-8" step="any">
+              </label>
+              <label>Máx. iteraciones
+                <input id="bis-max" type="number" value="120" step="1">
+              </label>
+            </div>
+            <button id="bis-run" class="btn-run">Calcular bisección</button>
+            <div id="bis-out" class="result">Esperando cálculo...</div>
+            <div id="bis-table" class="table-box"></div>
+          </div>
+          <div class="plot-wrap">
+            <canvas id="bis-plot" class="plot"></canvas>
+            <div class="hint">Gráfico de f(x) en [a,b] con la raíz aproximada y evolución de iteraciones.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-punto-fijo" class="panel">
+      <div class="card">
+        <div class="card-head">
+          <h2>Punto Fijo (x = g(x))</h2>
+          <span><span class="pill">Contracciones</span></span>
+        </div>
+        <div class="card-body">
+          <div class="controls">
+            <details class="formula-box">
+              <summary>Ver fórmulas</summary>
+              <ul class="formula-list">
+                <li><span class="eq">x<sub>k+1</sub> = g(x<sub>k</sub>)</span></li>
+                <li>Condición de contracción: <span class="eq">|g'(x)| &le; L &lt; 1</span></li>
+                <li>Cota a posteriori: <span class="eq">|x* - x<sub>k</sub>| &le; (L/(1-L))|x<sub>k</sub> - x<sub>k-1</sub>|</span></li>
+                <li>Convergencia lineal cuando hay contracción.</li>
+              </ul>
+            </details>
+            <label>g(x)
+              <input id="pf-g" value="cos(x)">
+            </label>
+            <div class="grid-2">
+              <label>x0
+                <input id="pf-x0" type="number" value="0.5" step="any">
+              </label>
+              <label>Lipschitz L (opcional)
+                <input id="pf-l" type="number" value="0.7" step="any">
+              </label>
+            </div>
+            <div class="grid-2">
+              <label>Tolerancia
+                <input id="pf-tol" type="number" value="1e-8" step="any">
+              </label>
+              <label>Máx. iteraciones
+                <input id="pf-max" type="number" value="120" step="1">
+              </label>
+            </div>
+            <button id="pf-run" class="btn-run">Calcular punto fijo</button>
+            <div id="pf-out" class="result">Esperando cálculo...</div>
+            <div id="pf-table" class="table-box"></div>
+          </div>
+          <div class="plot-wrap">
+            <canvas id="pf-plot" class="plot"></canvas>
+            <div class="hint">Diagrama tipo cobweb con y=g(x), y=x e iteraciones.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-newton" class="panel">
+      <div class="card">
+        <div class="card-head">
+          <h2>Newton-Raphson</h2>
+          <span><span class="pill">Convergencia cuadrática (simple)</span></span>
+        </div>
+        <div class="card-body">
+          <div class="controls">
+            <details class="formula-box">
+              <summary>Ver fórmulas</summary>
+              <ul class="formula-list">
+                <li><span class="eq">x<sub>k+1</sub> = x<sub>k</sub> - m &middot; f(x<sub>k</sub>)/f'(x<sub>k</sub>)</span></li>
+                <li>Si <span class="eq">m = 1</span> y la raíz es simple, el orden es 2 (cuadrático).</li>
+                <li>Derivada numérica central: <span class="eq">f'(x) &asymp; (f(x+h)-f(x-h))/(2h)</span></li>
+              </ul>
+            </details>
+            <label>f(x)
+              <input id="new-f" value="x^3 - x - 2">
+            </label>
+            <label>f'(x) (opcional, si vacío usa derivada numérica)
+              <input id="new-df" value="3*x^2 - 1">
+            </label>
+            <div class="grid-2">
+              <label>x0
+                <input id="new-x0" type="number" value="1.5" step="any">
+              </label>
+              <label>h deriv. numérica
+                <input id="new-h" type="number" value="1e-6" step="any">
+              </label>
+            </div>
+            <div class="grid-2">
+              <label>Multiplicidad m
+                <input id="new-m" type="number" value="1" step="1">
+              </label>
+              <label>Tolerancia
+                <input id="new-tol" type="number" value="1e-10" step="any">
+              </label>
+            </div>
+            <label>Máx. iteraciones
+              <input id="new-max" type="number" value="60" step="1">
+            </label>
+            <button id="new-run" class="btn-run">Calcular Newton</button>
+            <div id="new-out" class="result">Esperando cálculo...</div>
+            <div id="new-table" class="table-box"></div>
+          </div>
+          <div class="plot-wrap">
+            <canvas id="new-plot" class="plot"></canvas>
+            <div class="hint">Gráfico de f(x) con posiciones de x<sub>k</sub> sobre el eje x.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-aitken" class="panel">
+      <div class="card">
+        <div class="card-head">
+          <h2>Aitken Δ² (aceleración)</h2>
+          <span><span class="pill">Aceleración lineal</span></span>
+        </div>
+        <div class="card-body">
+          <div class="controls">
+            <details class="formula-box">
+              <summary>Ver fórmulas</summary>
+              <ul class="formula-list">
+                <li><span class="eq">&Delta;x<sub>k</sub> = x<sub>k+1</sub> - x<sub>k</sub></span></li>
+                <li><span class="eq">&Delta;<sup>2</sup>x<sub>k</sub> = x<sub>k+2</sub> - 2x<sub>k+1</sub> + x<sub>k</sub></span></li>
+                <li><span class="eq">x̂<sub>k</sub> = x<sub>k</sub> - (&Delta;x<sub>k</sub>)<sup>2</sup> / (&Delta;<sup>2</sup>x<sub>k</sub>)</span></li>
+              </ul>
+            </details>
+            <label>Secuencia explícita (si la completas, tiene prioridad)
+              <input id="ai-seq" value="">
+            </label>
+            <div class="mode-group">
+              <div class="hint">Si no pasás secuencia explícita, se genera con x<sub>k+1</sub> = g(x<sub>k</sub>).</div>
+              <label>g(x)
+                <input id="ai-g" value="cos(x)">
+              </label>
+              <div class="grid-2">
+                <label>x0
+                  <input id="ai-x0" type="number" value="0.5" step="any">
+                </label>
+                <label>n iteraciones
+                  <input id="ai-n" type="number" value="10" step="1">
+                </label>
+              </div>
+            </div>
+            <label>x* real para comparar (opcional)
+              <input id="ai-xstar" value="">
+            </label>
+            <button id="ai-run" class="btn-run">Aplicar Aitken</button>
+            <div id="ai-out" class="result">Esperando cálculo...</div>
+            <div id="ai-table" class="table-box"></div>
+          </div>
+          <div class="plot-wrap">
+            <canvas id="ai-plot" class="plot"></canvas>
+            <div class="hint">Comparación de secuencia original vs secuencia acelerada.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-lagrange" class="panel">
+      <div class="card">
+        <div class="card-head">
+          <h2>Interpolación de Lagrange</h2>
+          <span><span class="pill">Reconstrucción desde datos</span></span>
+        </div>
+        <div class="card-body">
+          <div class="controls">
+            <details class="formula-box">
+              <summary>Ver fórmulas</summary>
+              <ul class="formula-list">
+                <li><span class="eq">P<sub>n</sub>(x) = &Sigma;<sub>i=0</sub><sup>n</sup> y<sub>i</sub>L<sub>i</sub>(x)</span></li>
+                <li><span class="eq">L<sub>i</sub>(x) = &Pi;<sub>j&ne;i</sub> (x-x<sub>j</sub>)/(x<sub>i</sub>-x<sub>j</sub>)</span></li>
+                <li>Error: <span class="eq">f(x)-P<sub>n</sub>(x) = f<sup>(n+1)</sup>(&xi;)/(n+1)! &middot; &Pi;<sub>i=0</sub><sup>n</sup>(x-x<sub>i</sub>)</span></li>
+              </ul>
+            </details>
+            <label>Nodos x (coma)
+              <input id="lag-x" value="0,1,2">
+            </label>
+            <label>Valores y (coma)
+              <input id="lag-y" value="1,3,2">
+            </label>
+            <div class="grid-2">
+              <label>Puntos de evaluación x_eval
+                <input id="lag-xeval" value="0.5,1.5">
+              </label>
+              <label>Función real f(x) opcional
+                <input id="lag-freal" value="">
+              </label>
+            </div>
+            <button id="lag-run" class="btn-run">Interpolar</button>
+            <div id="lag-out" class="result">Esperando cálculo...</div>
+            <div id="lag-table" class="table-box"></div>
+          </div>
+          <div class="plot-wrap">
+            <canvas id="lag-plot" class="plot"></canvas>
+            <div class="hint">Nodos originales, polinomio interpolante y función real opcional.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-derivacion" class="panel">
+      <div class="card">
+        <div class="card-head">
+          <h2>Derivación Numérica</h2>
+          <span><span class="pill">Datos, parciales y paso óptimo</span></span>
+        </div>
+        <div class="card-body">
+          <div class="controls">
+            <details class="formula-box">
+              <summary>Ver fórmulas</summary>
+              <ul class="formula-list">
+                <li><span class="eq">f'(x<sub>i</sub>) &asymp; (f<sub>i+1</sub> - f<sub>i-1</sub>)/(2h)</span> (central, orden 2)</li>
+                <li><span class="eq">f''(x<sub>i</sub>) &asymp; (f<sub>i+1</sub> - 2f<sub>i</sub> + f<sub>i-1</sub>)/h<sup>2</sup></span></li>
+                <li><span class="eq">&part;f/&part;x<sub>j</sub> &asymp; (f(x+h e<sub>j</sub>) - f(x-h e<sub>j</sub>))/(2h)</span></li>
+                <li>Paso óptimo: <span class="eq">h<sub>opt</sub> = ((3&epsilon;|f(x<sub>0</sub>)|)/|f'''(x<sub>0</sub>)|)<sup>1/3</sup></span></li>
+              </ul>
+            </details>
+            <label>Modo
+              <select id="der-mode">
+                <option value="datos">Desde datos discretos</option>
+                <option value="parcial">Derivada parcial</option>
+                <option value="paso-optimo">Paso óptimo (primera central)</option>
+              </select>
+            </label>
+
+            <div id="der-datos" class="mode-group">
+              <label>x (coma)
+                <input id="der-x" value="0,0.1,0.2,0.3">
+              </label>
+              <label>y (coma)
+                <input id="der-y" value="0,0.0998334,0.198669,0.295520">
+              </label>
+              <div class="grid-2">
+                <label>Tipo
+                  <select id="der-tipo">
+                    <option value="primera">Primera derivada</option>
+                    <option value="segunda">Segunda derivada</option>
+                  </select>
+                </label>
+                <label>Esquema
+                  <select id="der-esquema">
+                    <option value="central">Central</option>
+                    <option value="forward">Forward</option>
+                    <option value="backward">Backward</option>
+                  </select>
+                </label>
+              </div>
+              <label>Índice puntual (opcional, vacío = todos)
+                <input id="der-indice" value="">
+              </label>
+            </div>
+
+            <div id="der-parcial" class="mode-group" style="display:none">
+              <label>f(x1,x2,...) usando variables de la lista
+                <input id="der-f" value="x^2*y + sin(x*y)">
+              </label>
+              <label>Variables (coma)
+                <input id="der-vars" value="x,y">
+              </label>
+              <label>Punto (coma)
+                <input id="der-point" value="1,2">
+              </label>
+              <div class="grid-2">
+                <label>Variable objetivo
+                  <input id="der-var-target" value="x">
+                </label>
+                <label>Orden
+                  <select id="der-orden">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                  </select>
+                </label>
+              </div>
+              <div class="grid-2">
+                <label>Esquema
+                  <select id="der-esquema2">
+                    <option value="central">Central</option>
+                    <option value="forward">Forward</option>
+                    <option value="backward">Backward</option>
+                  </select>
+                </label>
+                <label>h
+                  <input id="der-h" type="number" value="1e-5" step="any">
+                </label>
+              </div>
+            </div>
+
+            <div id="der-paso" class="mode-group" style="display:none">
+              <label>f(x)
+                <input id="der-f0" value="exp(x)">
+              </label>
+              <label>f'''(x)
+                <input id="der-d3f" value="exp(x)">
+              </label>
+              <div class="grid-2">
+                <label>x0
+                  <input id="der-x0" type="number" value="0" step="any">
+                </label>
+                <label>eps máquina
+                  <input id="der-eps" type="number" value="2.220446049250313e-16" step="any">
+                </label>
+              </div>
+            </div>
+
+            <button id="der-run" class="btn-run">Calcular derivación</button>
+            <div id="der-out" class="result">Esperando cálculo...</div>
+            <div id="der-table" class="table-box"></div>
+          </div>
+          <div class="plot-wrap">
+            <canvas id="der-plot" class="plot"></canvas>
+            <div class="hint">En modo datos muestra derivada aproximada vs x. En otros modos se muestra texto de resultado.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-integracion" class="panel">
+      <div class="card">
+        <div class="card-head">
+          <h2>Integración Numérica</h2>
+          <span><span class="pill">Rectángulos, Trapecio, Simpson</span></span>
+        </div>
+        <div class="card-body">
+          <div class="controls">
+            <details class="formula-box">
+              <summary>Ver fórmulas</summary>
+              <ul class="formula-list">
+                <li>Rectángulos: <span class="eq">I &asymp; h &middot; &Sigma; f(x<sub>i</sub>)</span> (left/right/midpoint)</li>
+                <li>Trapecio: <span class="eq">I &asymp; h[(f(a)+f(b))/2 + &Sigma;<sub>i=1</sub><sup>n-1</sup>f(x<sub>i</sub>)]</span></li>
+                <li>Simpson: <span class="eq">I &asymp; (h/3)[f(a)+f(b)+4&Sigma;f(x<sub>impar</sub>)+2&Sigma;f(x<sub>par</sub>)]</span></li>
+                <li>Richardson: <span class="eq">E &asymp; |I<sub>2n</sub>-I<sub>n</sub>|/(2<sup>p</sup>-1)</span></li>
+              </ul>
+            </details>
+            <label>f(x)
+              <input id="int-f" value="sin(x)">
+            </label>
+            <div class="grid-2">
+              <label>a
+                <input id="int-a" type="number" value="0" step="any">
+              </label>
+              <label>b
+                <input id="int-b" type="number" value="3.141592653589793" step="any">
+              </label>
+            </div>
+            <div class="grid-2">
+              <label>n subintervalos
+                <input id="int-n" type="number" value="100" step="1">
+              </label>
+              <label>Método
+                <select id="int-metodo">
+                  <option value="rectangulos">Rectángulos</option>
+                  <option value="trapecio">Trapecio</option>
+                  <option value="simpson">Simpson</option>
+                </select>
+              </label>
+            </div>
+            <label>Regla rectángulos
+              <select id="int-regla">
+                <option value="midpoint">Midpoint</option>
+                <option value="left">Left</option>
+                <option value="right">Right</option>
+              </select>
+            </label>
+            <button id="int-run" class="btn-run">Integrar</button>
+            <div id="int-out" class="result">Esperando cálculo...</div>
+            <div id="int-table" class="table-box"></div>
+          </div>
+          <div class="plot-wrap">
+            <canvas id="int-plot" class="plot"></canvas>
+            <div class="hint">Visualización del área de integración y discretización.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-montecarlo" class="panel">
+      <div class="card">
+        <div class="card-head">
+          <h2>Integración Monte Carlo</h2>
+          <span><span class="pill">IC y tamaño muestral</span></span>
+        </div>
+        <div class="card-body">
+          <div class="controls">
+            <details class="formula-box">
+              <summary>Ver fórmulas</summary>
+              <ul class="formula-list">
+                <li><span class="eq">I = &int;<sub>D</sub> f(x) dx = V(D)E[f(U)]</span>, con <span class="eq">U ~ U(D)</span></li>
+                <li><span class="eq">Ĩ<sub>n</sub> = V(D) &middot; (1/n)&Sigma;<sub>k=1</sub><sup>n</sup> f(U<sub>k</sub>)</span></li>
+                <li><span class="eq">Var(Ĩ<sub>n</sub>) = V(D)<sup>2</sup>Var(f(U))/n</span></li>
+                <li>IC: <span class="eq">Ĩ<sub>n</sub> &plusmn; z<sub>1-&alpha;/2</sub>&radic;Var(Ĩ<sub>n</sub>)</span></li>
+                <li>Tamaño muestral: <span class="eq">n &asymp; (z&sigma;/&epsilon;)<sup>2</sup></span></li>
+              </ul>
+            </details>
+            <label>f(x1,x2,...) (en 1D podés usar x)
+              <input id="mc-f" value="x^2">
+            </label>
+            <label>Bounds por dimensión: "min,max; min,max; ..."
+              <input id="mc-bounds" value="0,1">
+            </label>
+            <div class="grid-2">
+              <label>n muestras
+                <input id="mc-n" type="number" value="20000" step="1">
+              </label>
+              <label>alpha
+                <input id="mc-alpha" type="number" value="0.05" step="any">
+              </label>
+            </div>
+            <div class="grid-2">
+              <label>Semilla (opcional)
+                <input id="mc-seed" value="123">
+              </label>
+              <label>Error objetivo (opcional)
+                <input id="mc-target" value="0.005">
+              </label>
+            </div>
+            <button id="mc-run" class="btn-run">Integrar con Monte Carlo</button>
+            <div id="mc-out" class="result">Esperando cálculo...</div>
+            <div id="mc-table" class="table-box"></div>
+          </div>
+          <div class="plot-wrap">
+            <canvas id="mc-plot" class="plot"></canvas>
+            <div class="hint">Convergencia de la estimación integral en función del número de muestras.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const allowedMath = `
+        const {abs,acos,acosh,asin,asinh,atan,atan2,atanh,cbrt,ceil,clz32,cos,cosh,exp,expm1,floor,fround,hypot,imul,log,log10,log1p,log2,max,min,pow,round,sign,sin,sinh,sqrt,tan,tanh,trunc} = Math;
+        const pi = Math.PI;
+        const e = Math.E;
+      `;
+
+      function compileExpr(expr, varNames = ["x"]) {
+        const source = String(expr).trim().replaceAll("^", "**");
+        if (!source) throw new Error("La expresión está vacía.");
+        let fn;
+        try {
+          fn = new Function(...varNames, `"use strict"; ${allowedMath} return (${source});`);
+        } catch (err) {
+          throw new Error(`Expresión inválida: ${err.message}`);
+        }
+        return (...values) => {
+          let out;
+          try {
+            out = Number(fn(...values));
+          } catch (err) {
+            throw new Error(`Error al evaluar expresión: ${err.message}`);
+          }
+          if (!Number.isFinite(out)) {
+            throw new Error("La expresión devolvió un valor no finito.");
+          }
+          return out;
+        };
+      }
+
+      function parseList(raw, sep = ",") {
+        const out = String(raw || "")
+          .split(sep)
+          .map(x => x.trim())
+          .filter(Boolean)
+          .map(Number);
+        if (!out.length || out.some(v => !Number.isFinite(v))) {
+          throw new Error("Lista numérica inválida.");
+        }
+        return out;
+      }
+
+      function parseBounds(raw) {
+        const chunks = String(raw || "")
+          .split(";")
+          .map(s => s.trim())
+          .filter(Boolean);
+        if (!chunks.length) throw new Error("Bounds vacíos.");
+        const bounds = [];
+        for (const ch of chunks) {
+          const vals = parseList(ch);
+          if (vals.length !== 2) throw new Error(`Bound inválido: "${ch}".`);
+          const [lo, hi] = vals;
+          if (!(hi > lo)) throw new Error(`Bound inválido: "${ch}" (se requiere max > min).`);
+          bounds.push([lo, hi]);
+        }
+        return bounds;
+      }
+
+      function fmt(x, n = 10) {
+        if (typeof x !== "number" || !Number.isFinite(x)) return String(x);
+        return Math.abs(x) >= 1e4 || (Math.abs(x) < 1e-4 && x !== 0)
+          ? x.toExponential(4)
+          : x.toFixed(n).replace(/0+$/, "").replace(/\.$/, "");
+      }
+
+      function setResult(id, text, mode = "ok") {
+        const el = document.getElementById(id);
+        el.textContent = text;
+        el.classList.remove("ok", "err");
+        el.classList.add(mode);
+      }
+
+      function clearTable(id) {
+        document.getElementById(id).innerHTML = "";
+      }
+
+      function escapeHtml(text) {
+        return String(text)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      function formatMathLabel(label) {
+        let out = escapeHtml(label);
+        out = out.replace(/\b([A-Za-z])_hat\b/g, "$1\u0302");
+        out = out.replace(/_\{([^}]+)\}/g, "<sub>$1</sub>");
+        out = out.replace(/_([A-Za-z0-9+\-*/().]+)/g, "<sub>$1</sub>");
+        out = out.replace(/\^\{([^}]+)\}/g, "<sup>$1</sup>");
+        out = out.replace(/\^([A-Za-z0-9+\-*/().]+)/g, "<sup>$1</sup>");
+        return `<span class="math-label">${out}</span>`;
+      }
+
+      function renderTable(id, headers, rows, maxRows = 300) {
+        const root = document.getElementById(id);
+        if (!rows || !rows.length) {
+          root.innerHTML = "";
+          return;
+        }
+        const sliced = rows.slice(0, maxRows);
+        const th = headers.map(h => `<th>${formatMathLabel(h)}</th>`).join("");
+        const tr = sliced.map(r => `<tr>${r.map(v => `<td>${v}</td>`).join("")}</tr>`).join("");
+        const note = rows.length > maxRows
+          ? `<div class="hint" style="padding:6px 8px">Mostrando ${maxRows} de ${rows.length} filas.</div>`
+          : "";
+        root.innerHTML = `<table><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table>${note}`;
+      }
+
+      function initCanvas(canvas) {
+        const rect = canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        const w = Math.max(280, rect.width);
+        const h = Math.max(220, rect.height);
+        canvas.width = Math.floor(w * dpr);
+        canvas.height = Math.floor(h * dpr);
+        const ctx = canvas.getContext("2d");
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, w, h);
+        return { ctx, w, h };
+      }
+
+      function expandRange(min, max, padRatio = 0.08) {
+        if (!Number.isFinite(min) || !Number.isFinite(max)) return [-1, 1];
+        if (min === max) {
+          const d = Math.max(1, Math.abs(min) * 0.2);
+          return [min - d, max + d];
+        }
+        const pad = (max - min) * padRatio;
+        return [min - pad, max + pad];
+      }
+
+      function getMinMax(arr) {
+        let mn = Infinity;
+        let mx = -Infinity;
+        for (const v of arr) {
+          if (Number.isFinite(v)) {
+            if (v < mn) mn = v;
+            if (v > mx) mx = v;
+          }
+        }
+        if (!Number.isFinite(mn) || !Number.isFinite(mx)) return [-1, 1];
+        return [mn, mx];
+      }
+
+      function createPlot(canvas, xMin, xMax, yMin, yMax, title = "") {
+        const { ctx, w, h } = initCanvas(canvas);
+        const pad = { l: 54, r: 18, t: 24, b: 42 };
+        const pw = w - pad.l - pad.r;
+        const ph = h - pad.t - pad.b;
+        const xr = xMax - xMin;
+        const yr = yMax - yMin;
+
+        function sx(x) { return pad.l + ((x - xMin) / xr) * pw; }
+        function sy(y) { return pad.t + (1 - (y - yMin) / yr) * ph; }
+
+        function drawGrid() {
+          ctx.save();
+          ctx.strokeStyle = "rgba(78, 88, 84, 0.16)";
+          ctx.lineWidth = 1;
+          for (let i = 0; i <= 6; i++) {
+            const x = pad.l + (i / 6) * pw;
+            ctx.beginPath();
+            ctx.moveTo(x, pad.t);
+            ctx.lineTo(x, pad.t + ph);
+            ctx.stroke();
+          }
+          for (let j = 0; j <= 6; j++) {
+            const y = pad.t + (j / 6) * ph;
+            ctx.beginPath();
+            ctx.moveTo(pad.l, y);
+            ctx.lineTo(pad.l + pw, y);
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+
+        function drawAxes() {
+          ctx.save();
+          ctx.strokeStyle = "#2e3b39";
+          ctx.lineWidth = 1.25;
+          const x0 = (xMin <= 0 && 0 <= xMax) ? sx(0) : pad.l;
+          const y0 = (yMin <= 0 && 0 <= yMax) ? sy(0) : pad.t + ph;
+          ctx.beginPath();
+          ctx.moveTo(pad.l, y0);
+          ctx.lineTo(pad.l + pw, y0);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(x0, pad.t);
+          ctx.lineTo(x0, pad.t + ph);
+          ctx.stroke();
+
+          ctx.fillStyle = "#2e3b39";
+          ctx.font = "11px Fira Sans, sans-serif";
+          ctx.textAlign = "right";
+          ctx.fillText(`x:[${fmt(xMin, 4)}, ${fmt(xMax, 4)}]`, pad.l + pw - 4, h - 8);
+          ctx.textAlign = "left";
+          ctx.fillText(`y:[${fmt(yMin, 4)}, ${fmt(yMax, 4)}]`, pad.l + 4, h - 8);
+          if (title) {
+            ctx.fillStyle = "#18443d";
+            ctx.font = "bold 12px Fira Sans, sans-serif";
+            ctx.textAlign = "left";
+            ctx.fillText(title, pad.l, 14);
+          }
+          ctx.restore();
+        }
+
+        function line(points, color = "#0c7b72", width = 2) {
+          if (!points || points.length < 2) return;
+          ctx.save();
+          ctx.strokeStyle = color;
+          ctx.lineWidth = width;
+          ctx.beginPath();
+          ctx.moveTo(sx(points[0][0]), sy(points[0][1]));
+          for (let i = 1; i < points.length; i++) ctx.lineTo(sx(points[i][0]), sy(points[i][1]));
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        function dots(points, color = "#cf5b37", r = 3) {
+          if (!points || !points.length) return;
+          ctx.save();
+          ctx.fillStyle = color;
+          for (const p of points) {
+            ctx.beginPath();
+            ctx.arc(sx(p[0]), sy(p[1]), r, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+
+        function polyFill(points, color = "rgba(12,123,114,0.18)") {
+          if (!points || points.length < 3) return;
+          ctx.save();
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.moveTo(sx(points[0][0]), sy(points[0][1]));
+          for (let i = 1; i < points.length; i++) ctx.lineTo(sx(points[i][0]), sy(points[i][1]));
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+        }
+
+        function vline(x, color = "rgba(207,91,55,0.5)", width = 1.2) {
+          ctx.save();
+          ctx.strokeStyle = color;
+          ctx.lineWidth = width;
+          ctx.beginPath();
+          ctx.moveTo(sx(x), pad.t);
+          ctx.lineTo(sx(x), pad.t + ph);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        function text(x, y, s, color = "#223834") {
+          ctx.save();
+          ctx.fillStyle = color;
+          ctx.font = "11px Fira Sans, sans-serif";
+          ctx.fillText(s, sx(x) + 4, sy(y) - 6);
+          ctx.restore();
+        }
+
+        drawGrid();
+        drawAxes();
+        return { line, dots, polyFill, vline, text, sx, sy };
+      }
+
+      function sampleFunction(f, a, b, n = 300) {
+        const points = [];
+        for (let i = 0; i <= n; i++) {
+          const x = a + ((b - a) * i) / n;
+          let y;
+          try {
+            y = f(x);
+          } catch {
+            continue;
+          }
+          if (Number.isFinite(y)) points.push([x, y]);
+        }
+        return points;
+      }
+
+      function estimateOrder(errors) {
+        if (errors.length < 3) return null;
+        const e0 = errors[errors.length - 3];
+        const e1 = errors[errors.length - 2];
+        const e2 = errors[errors.length - 1];
+        if (e0 <= 0 || e1 <= 0 || e2 <= 0) return null;
+        const den = Math.log(e1 / e0);
+        if (Math.abs(den) < 1e-15) return null;
+        return Math.log(e2 / e1) / den;
+      }
+
+      function biseccionMethod(f, a, b, tol, maxIter) {
+        let fa = f(a);
+        let fb = f(b);
+        if (fa === 0) return { root: a, fr: fa, iter: 0, cota: 0, hist: [] };
+        if (fb === 0) return { root: b, fr: fb, iter: 0, cota: 0, hist: [] };
+        if (fa * fb > 0) throw new Error("f(a) y f(b) deben tener distinto signo.");
+        const hist = [];
+        let c = a;
+        let fc = fa;
+        for (let k = 1; k <= maxIter; k++) {
+          c = 0.5 * (a + b);
+          fc = f(c);
+          const cota = Math.abs(b - a) * 0.5;
+          hist.push({ k, a, b, c, fc, cota });
+          if (Math.abs(fc) <= tol || cota <= tol) return { root: c, fr: fc, iter: k, cota, hist };
+          if (fa * fc < 0) {
+            b = c;
+            fb = fc;
+          } else {
+            a = c;
+            fa = fc;
+          }
+        }
+        return { root: c, fr: fc, iter: maxIter, cota: Math.abs(b - a) * 0.5, hist };
+      }
+
+      function puntoFijoMethod(g, x0, tol, maxIter, L = null) {
+        let x = x0;
+        const hist = [];
+        const errors = [];
+        for (let k = 1; k <= maxIter; k++) {
+          const nx = g(x);
+          if (!Number.isFinite(nx)) throw new Error("Iteración no finita.");
+          const err = Math.abs(nx - x);
+          errors.push(err);
+          const ord = estimateOrder(errors);
+          const cota = (L !== null && L > 0 && L < 1) ? (L / (1 - L)) * err : null;
+          hist.push({ k, x: nx, err, ord, cota, xPrev: x });
+          if (err <= tol) return { x: nx, iter: k, err, hist };
+          x = nx;
+        }
+        return { x, iter: maxIter, err: hist.length ? hist[hist.length - 1].err : Infinity, hist };
+      }
+
+      function newtonMethod(f, df, x0, tol, maxIter, m = 1) {
+        let x = x0;
+        const hist = [];
+        const errors = [];
+        for (let k = 1; k <= maxIter; k++) {
+          const fx = f(x);
+          const dfx = df(x);
+          if (Math.abs(dfx) < 1e-15) throw new Error(`Derivada casi nula en iteración ${k}.`);
+          const nx = x - (m * fx) / dfx;
+          const err = Math.abs(nx - x);
+          errors.push(err);
+          const ord = estimateOrder(errors);
+          hist.push({ k, x: nx, fx: f(nx), err, ord });
+          if (err <= tol || Math.abs(f(nx)) <= tol) return { x: nx, iter: k, err, hist };
+          x = nx;
+        }
+        return { x, iter: maxIter, err: hist.length ? hist[hist.length - 1].err : Infinity, hist };
+      }
+
+      function aitkenMethod(seq) {
+        if (seq.length < 3) throw new Error("Se requieren al menos 3 términos.");
+        const rows = [];
+        const accelerated = [];
+        for (let k = 0; k <= seq.length - 3; k++) {
+          const x0 = seq[k];
+          const x1 = seq[k + 1];
+          const x2 = seq[k + 2];
+          const d1 = x1 - x0;
+          const d2 = x2 - x1;
+          const den = d2 - d1;
+          let xhat = null;
+          if (Math.abs(den) > 1e-15) {
+            xhat = x0 - (d1 * d1) / den;
+            accelerated.push(xhat);
+          }
+          rows.push({ k, x0, x1, x2, xhat });
+        }
+        return { rows, accelerated };
+      }
+
+      function lagrangeEval(xs, ys, x) {
+        let total = 0;
+        for (let i = 0; i < xs.length; i++) {
+          let li = 1;
+          for (let j = 0; j < xs.length; j++) {
+            if (i === j) continue;
+            li *= (x - xs[j]) / (xs[i] - xs[j]);
+          }
+          total += ys[i] * li;
+        }
+        return total;
+      }
+
+      function checkUniformGrid(xs, tol = 1e-12) {
+        if (xs.length < 2) throw new Error("Se requieren al menos 2 puntos.");
+        const hs = [];
+        for (let i = 0; i < xs.length - 1; i++) hs.push(xs[i + 1] - xs[i]);
+        if (hs.some(h => h <= 0)) throw new Error("x debe ser estrictamente creciente.");
+        const h0 = hs[0];
+        for (const h of hs.slice(1)) {
+          if (Math.abs(h - h0) > tol * Math.max(1, Math.abs(h0))) throw new Error("La malla x no es uniforme.");
+        }
+        return h0;
+      }
+
+      function derivativeFromData(xs, ys, tipo, esquema, index) {
+        const h = checkUniformGrid(xs);
+        const n = xs.length;
+        if (tipo === "primera") {
+          if (esquema === "forward") {
+            if (!(index >= 0 && index <= n - 2)) throw new Error("Índice inválido para forward.");
+            return [(ys[index + 1] - ys[index]) / h, 1];
+          }
+          if (esquema === "backward") {
+            if (!(index >= 1 && index <= n - 1)) throw new Error("Índice inválido para backward.");
+            return [(ys[index] - ys[index - 1]) / h, 1];
+          }
+          if (!(index >= 1 && index <= n - 2)) throw new Error("Índice inválido para central.");
+          return [(ys[index + 1] - ys[index - 1]) / (2 * h), 2];
+        }
+        if (tipo === "segunda") {
+          if (esquema === "forward") {
+            if (!(index >= 0 && index <= n - 3)) throw new Error("Índice inválido para forward.");
+            return [(ys[index] - 2 * ys[index + 1] + ys[index + 2]) / (h * h), 1];
+          }
+          if (esquema === "backward") {
+            if (!(index >= 2 && index <= n - 1)) throw new Error("Índice inválido para backward.");
+            return [(ys[index] - 2 * ys[index - 1] + ys[index - 2]) / (h * h), 1];
+          }
+          if (!(index >= 1 && index <= n - 2)) throw new Error("Índice inválido para central.");
+          return [(ys[index + 1] - 2 * ys[index] + ys[index - 1]) / (h * h), 2];
+        }
+        throw new Error("Tipo no soportado.");
+      }
+
+      function validIndices(n, tipo, esquema) {
+        if (tipo === "primera") {
+          if (esquema === "forward") return [...Array(n - 1).keys()];
+          if (esquema === "backward") return [...Array(n - 1).keys()].map(i => i + 1);
+          return [...Array(Math.max(0, n - 2)).keys()].map(i => i + 1);
+        }
+        if (esquema === "forward") return [...Array(Math.max(0, n - 2)).keys()];
+        if (esquema === "backward") return [...Array(Math.max(0, n - 2)).keys()].map(i => i + 2);
+        return [...Array(Math.max(0, n - 2)).keys()].map(i => i + 1);
+      }
+
+      function partialFinite(expr, vars, point, targetVar, order, esquema, h) {
+        const target = vars.indexOf(targetVar);
+        if (target < 0) throw new Error(`Variable ${targetVar} no encontrada.`);
+        const f = compileExpr(expr, vars);
+        const base = point.slice();
+        const fAt = (arr) => f(...arr);
+
+        if (order === 1) {
+          if (esquema === "forward") {
+            const p1 = base.slice(); p1[target] += h;
+            return [(fAt(p1) - fAt(base)) / h, 1];
+          }
+          if (esquema === "backward") {
+            const p1 = base.slice(); p1[target] -= h;
+            return [(fAt(base) - fAt(p1)) / h, 1];
+          }
+          const p1 = base.slice(); p1[target] += h;
+          const p2 = base.slice(); p2[target] -= h;
+          return [(fAt(p1) - fAt(p2)) / (2 * h), 2];
+        }
+        if (order === 2) {
+          if (esquema === "forward") {
+            const p1 = base.slice(); p1[target] += h;
+            const p2 = base.slice(); p2[target] += 2 * h;
+            return [(fAt(p2) - 2 * fAt(p1) + fAt(base)) / (h * h), 1];
+          }
+          if (esquema === "backward") {
+            const p1 = base.slice(); p1[target] -= h;
+            const p2 = base.slice(); p2[target] -= 2 * h;
+            return [(fAt(base) - 2 * fAt(p1) + fAt(p2)) / (h * h), 1];
+          }
+          const p1 = base.slice(); p1[target] += h;
+          const p2 = base.slice(); p2[target] -= h;
+          return [(fAt(p1) - 2 * fAt(base) + fAt(p2)) / (h * h), 2];
+        }
+        throw new Error("Orden no soportado.");
+      }
+
+      function optimalStep(exprF, exprD3, x0, eps) {
+        const f = compileExpr(exprF, ["x"]);
+        const d3f = compileExpr(exprD3, ["x"]);
+        const fx = f(x0);
+        const d3 = d3f(x0);
+        if (Math.abs(d3) < 1e-18) throw new Error("f'''(x0) muy pequeño.");
+        return Math.pow((3 * eps * Math.abs(fx)) / Math.abs(d3), 1 / 3);
+      }
+
+      function rectMethod(f, a, b, n, rule) {
+        const h = (b - a) / n;
+        let s = 0;
+        if (rule === "left") for (let i = 0; i < n; i++) s += f(a + i * h);
+        else if (rule === "right") for (let i = 0; i < n; i++) s += f(a + (i + 1) * h);
+        else for (let i = 0; i < n; i++) s += f(a + (i + 0.5) * h);
+        return h * s;
+      }
+
+      function trapMethod(f, a, b, n) {
+        const h = (b - a) / n;
+        let s = 0.5 * (f(a) + f(b));
+        for (let i = 1; i < n; i++) s += f(a + i * h);
+        return h * s;
+      }
+
+      function simpsonMethod(f, a, b, n) {
+        if (n % 2 !== 0) throw new Error("Para Simpson, n debe ser par.");
+        const h = (b - a) / n;
+        let s = f(a) + f(b);
+        for (let i = 1; i < n; i += 2) s += 4 * f(a + i * h);
+        for (let i = 2; i < n; i += 2) s += 2 * f(a + i * h);
+        return (h / 3) * s;
+      }
+
+      function integrate(f, method, a, b, n, rule) {
+        if (method === "rectangulos") return rectMethod(f, a, b, n, rule);
+        if (method === "trapecio") return trapMethod(f, a, b, n);
+        if (method === "simpson") return simpsonMethod(f, a, b, n);
+        throw new Error("Método no soportado.");
+      }
+
+      function methodOrder(method, rule) {
+        if (method === "rectangulos") return (rule === "midpoint" ? 2 : 1);
+        if (method === "trapecio") return 2;
+        return 4;
+      }
+
+      class LCG {
+        constructor(seed = 1234567) {
+          this.state = (seed >>> 0) || 1234567;
+        }
+        random() {
+          this.state = (1664525 * this.state + 1013904223) >>> 0;
+          return this.state / 2 ** 32;
+        }
+      }
+
+      function invNorm(p) {
+        const a1 = -39.6968302866538, a2 = 220.946098424521, a3 = -275.928510446969;
+        const a4 = 138.357751867269, a5 = -30.6647980661472, a6 = 2.50662827745924;
+        const b1 = -54.4760987982241, b2 = 161.585836858041, b3 = -155.698979859887;
+        const b4 = 66.8013118877197, b5 = -13.2806815528857;
+        const c1 = -0.00778489400243029, c2 = -0.322396458041136, c3 = -2.40075827716184;
+        const c4 = -2.54973253934373, c5 = 4.37466414146497, c6 = 2.93816398269878;
+        const d1 = 0.00778469570904146, d2 = 0.32246712907004, d3 = 2.445134137143;
+        const d4 = 3.75440866190742;
+        const plow = 0.02425;
+        const phigh = 1 - plow;
+        let q, r;
+        if (p < plow) {
+          q = Math.sqrt(-2 * Math.log(p));
+          return (((((c1 * q + c2) * q + c3) * q + c4) * q + c5) * q + c6) /
+                 ((((d1 * q + d2) * q + d3) * q + d4) * q + 1);
+        }
+        if (phigh < p) {
+          q = Math.sqrt(-2 * Math.log(1 - p));
+          return -(((((c1 * q + c2) * q + c3) * q + c4) * q + c5) * q + c6) /
+                 ((((d1 * q + d2) * q + d3) * q + d4) * q + 1);
+        }
+        q = p - 0.5;
+        r = q * q;
+        return (((((a1 * r + a2) * r + a3) * r + a4) * r + a5) * r + a6) * q /
+               (((((b1 * r + b2) * r + b3) * r + b4) * r + b5) * r + 1);
+      }
+
+      function mcIntegrate(expr, bounds, n, alpha, seed) {
+        const dim = bounds.length;
+        const varNames = dim === 1
+          ? ["x", "x1"]
+          : Array.from({ length: dim }, (_, i) => `x${i + 1}`);
+        const f = compileExpr(expr, varNames);
+        const rng = Number.isFinite(seed) ? new LCG(seed >>> 0) : { random: () => Math.random() };
+        let volume = 1;
+        for (const [lo, hi] of bounds) volume *= (hi - lo);
+
+        let mean = 0;
+        let m2 = 0;
+        const conv = [];
+        const step = Math.max(1, Math.floor(n / 240));
+
+        for (let k = 1; k <= n; k++) {
+          const point = bounds.map(([lo, hi]) => lo + (hi - lo) * rng.random());
+          let val;
+          try {
+            val = dim === 1 ? f(point[0], point[0]) : f(...point);
+          } catch {
+            throw new Error("Error evaluando f en Monte Carlo.");
+          }
+          const d = val - mean;
+          mean += d / k;
+          m2 += d * (val - mean);
+          if (k % step === 0 || k === n) conv.push([k, volume * mean]);
+        }
+
+        const varF = n > 1 ? m2 / (n - 1) : 0;
+        const estimate = volume * mean;
+        const varEstimator = volume * volume * varF / n;
+        const se = Math.sqrt(Math.max(0, varEstimator));
+        const z = invNorm(1 - alpha / 2);
+        const ci = [estimate - z * se, estimate + z * se];
+
+        return { dim, estimate, varEstimator, se, ci, conv };
+      }
+
+      function runByTabId(tabId) {
+        const runByTab = {
+          "tab-biseccion": runBiseccion,
+          "tab-punto-fijo": runPuntoFijo,
+          "tab-newton": runNewton,
+          "tab-aitken": runAitken,
+          "tab-lagrange": runLagrange,
+          "tab-derivacion": runDerivacion,
+          "tab-integracion": runIntegracion,
+          "tab-montecarlo": runMonteCarlo,
+        };
+        const fn = runByTab[tabId];
+        if (fn) fn();
+      }
+
+      function setupTabs() {
+        const buttons = [...document.querySelectorAll(".tab-btn")];
+        const panels = [...document.querySelectorAll(".panel")];
+        buttons.forEach(btn => {
+          btn.addEventListener("click", () => {
+            buttons.forEach(b => b.classList.remove("active"));
+            panels.forEach(p => p.classList.remove("active"));
+            btn.classList.add("active");
+            const tabId = btn.dataset.tab;
+            document.getElementById(tabId).classList.add("active");
+            window.requestAnimationFrame(() => runByTabId(tabId));
+          });
+        });
+      }
+
+      function runBiseccion() {
+        clearTable("bis-table");
+        try {
+          const f = compileExpr(document.getElementById("bis-f").value, ["x"]);
+          const a = Number(document.getElementById("bis-a").value);
+          const b = Number(document.getElementById("bis-b").value);
+          const tol = Number(document.getElementById("bis-tol").value);
+          const maxIter = Number(document.getElementById("bis-max").value);
+          if (!(b > a)) throw new Error("Debe cumplirse b > a.");
+          if (!(tol > 0)) throw new Error("Tolerancia inválida.");
+          if (!(maxIter > 0)) throw new Error("Máx. iteraciones inválido.");
+
+          const res = biseccionMethod(f, a, b, tol, maxIter);
+          const msg = [
+            `Raíz aproximada: ${fmt(res.root)}`,
+            `f(raíz): ${fmt(res.fr)}`,
+            `Iteraciones: ${res.iter}`,
+            `Cota error final: ${fmt(res.cota)}`,
+          ].join("\n");
+          setResult("bis-out", msg, "ok");
+
+          renderTable(
+            "bis-table",
+            ["k", "a", "b", "c", "f(c)", "cota"],
+            res.hist.map(r => [r.k, fmt(r.a), fmt(r.b), fmt(r.c), fmt(r.fc), fmt(r.cota)])
+          );
+
+          const pts = sampleFunction(f, a, b, 420);
+          const ys = pts.map(p => p[1]).concat([0]);
+          const [ymin0, ymax0] = getMinMax(ys);
+          const [ymin, ymax] = expandRange(ymin0, ymax0, 0.12);
+          const plot = createPlot(document.getElementById("bis-plot"), a, b, ymin, ymax, "f(x) y raíz");
+          plot.line(pts, "#0c7b72", 2.2);
+          plot.vline(res.root, "rgba(207,91,55,0.62)", 1.5);
+          plot.dots([[res.root, 0]], "#cf5b37", 3.5);
+          plot.text(res.root, 0, `r=${fmt(res.root, 5)}`, "#8b2e1a");
+        } catch (err) {
+          setResult("bis-out", err.message, "err");
+          const plot = createPlot(document.getElementById("bis-plot"), -1, 1, -1, 1, "Error de entrada");
+          plot.text(-0.95, 0.65, "Revisá los datos de entrada.", "#8b2e1a");
+        }
+      }
+
+      function runPuntoFijo() {
+        clearTable("pf-table");
+        try {
+          const g = compileExpr(document.getElementById("pf-g").value, ["x"]);
+          const x0 = Number(document.getElementById("pf-x0").value);
+          const tol = Number(document.getElementById("pf-tol").value);
+          const maxIter = Number(document.getElementById("pf-max").value);
+          const lRaw = document.getElementById("pf-l").value.trim();
+          const L = lRaw === "" ? null : Number(lRaw);
+          if (!(tol > 0)) throw new Error("Tolerancia inválida.");
+          if (!(maxIter > 0)) throw new Error("Máx. iteraciones inválido.");
+          if (L !== null && !Number.isFinite(L)) throw new Error("Lipschitz inválido.");
+
+          const res = puntoFijoMethod(g, x0, tol, maxIter, L);
+          const lastOrd = res.hist.length ? res.hist[res.hist.length - 1].ord : null;
+          const msg = [
+            `x aproximado: ${fmt(res.x)}`,
+            `Iteraciones: ${res.iter}`,
+            `Error final |x_k - x_{k-1}|: ${fmt(res.err)}`,
+            lastOrd !== null ? `Orden estimado: ${fmt(lastOrd, 4)}` : "Orden estimado: n/d",
+          ].join("\n");
+          setResult("pf-out", msg, "ok");
+
+          renderTable(
+            "pf-table",
+            ["k", "x_k", "error", "orden", "cota"],
+            res.hist.map(r => [r.k, fmt(r.x), fmt(r.err), r.ord === null ? "" : fmt(r.ord, 4), r.cota === null ? "" : fmt(r.cota)])
+          );
+
+          const seq = [x0, ...res.hist.map(h => h.x)];
+          const xMin0 = Math.min(...seq);
+          const xMax0 = Math.max(...seq);
+          const [xMin, xMax] = expandRange(xMin0, xMax0, 0.24);
+          const samples = sampleFunction(g, xMin, xMax, 360);
+          const allY = samples.map(p => p[1]).concat([xMin, xMax]);
+          const [y0, y1] = getMinMax(allY);
+          const [yMin, yMax] = expandRange(y0, y1, 0.15);
+          const plot = createPlot(document.getElementById("pf-plot"), xMin, xMax, yMin, yMax, "Cobweb y=g(x), y=x");
+          plot.line(samples, "#0c7b72", 2.1);
+          plot.line([[xMin, xMin], [xMax, xMax]], "#cf5b37", 1.6);
+
+          const cob = [];
+          let x = x0;
+          for (let i = 0; i < Math.min(res.hist.length, 40); i++) {
+            const y = g(x);
+            cob.push([x, x], [x, y], [y, y]);
+            x = y;
+          }
+          plot.line(cob, "rgba(21,86,67,0.58)", 1.2);
+          plot.dots([[res.x, res.x]], "#cf5b37", 3.4);
+          plot.text(res.x, res.x, `x*≈${fmt(res.x, 5)}`, "#8b2e1a");
+        } catch (err) {
+          setResult("pf-out", err.message, "err");
+          const plot = createPlot(document.getElementById("pf-plot"), -1, 1, -1, 1, "Error de entrada");
+          plot.text(-0.95, 0.65, "No se pudo iterar.", "#8b2e1a");
+        }
+      }
+
+      function runNewton() {
+        clearTable("new-table");
+        try {
+          const f = compileExpr(document.getElementById("new-f").value, ["x"]);
+          const dfRaw = document.getElementById("new-df").value.trim();
+          const x0 = Number(document.getElementById("new-x0").value);
+          const h = Number(document.getElementById("new-h").value);
+          const m = Number(document.getElementById("new-m").value);
+          const tol = Number(document.getElementById("new-tol").value);
+          const maxIter = Number(document.getElementById("new-max").value);
+          if (!(m > 0 && Number.isInteger(m))) throw new Error("m debe ser entero positivo.");
+          if (!(tol > 0)) throw new Error("Tolerancia inválida.");
+          if (!(maxIter > 0)) throw new Error("Máx. iteraciones inválido.");
+          if (!(h > 0)) throw new Error("h inválido.");
+
+          const df = dfRaw
+            ? compileExpr(dfRaw, ["x"])
+            : (x) => (f(x + h * Math.max(1, Math.abs(x))) - f(x - h * Math.max(1, Math.abs(x)))) / (2 * h * Math.max(1, Math.abs(x)));
+
+          const res = newtonMethod(f, df, x0, tol, maxIter, m);
+          const lastOrd = res.hist.length ? res.hist[res.hist.length - 1].ord : null;
+          const msg = [
+            `x aproximado: ${fmt(res.x)}`,
+            `f(x): ${fmt(f(res.x))}`,
+            `Iteraciones: ${res.iter}`,
+            `Error final: ${fmt(res.err)}`,
+            `Derivada: ${dfRaw ? "analítica" : "numérica central"}`,
+            lastOrd !== null ? `Orden estimado: ${fmt(lastOrd, 4)}` : "Orden estimado: n/d",
+          ].join("\n");
+          setResult("new-out", msg, "ok");
+
+          renderTable(
+            "new-table",
+            ["k", "x_k", "f(x_k)", "error", "orden"],
+            res.hist.map(r => [r.k, fmt(r.x), fmt(r.fx), fmt(r.err), r.ord === null ? "" : fmt(r.ord, 4)])
+          );
+
+          const xs = [x0, ...res.hist.map(hh => hh.x)];
+          const [mn, mx] = expandRange(Math.min(...xs), Math.max(...xs), 0.45);
+          const pts = sampleFunction(f, mn, mx, 360);
+          const [yMin0, yMax0] = getMinMax(pts.map(p => p[1]).concat([0]));
+          const [yMin, yMax] = expandRange(yMin0, yMax0, 0.16);
+          const plot = createPlot(document.getElementById("new-plot"), mn, mx, yMin, yMax, "f(x) y aproximaciones x_k");
+          plot.line(pts, "#0c7b72", 2.1);
+          const dots = xs.map(x => [x, 0]);
+          plot.dots(dots, "#cf5b37", 3.2);
+          plot.vline(res.x, "rgba(207,91,55,0.55)", 1.3);
+          plot.text(res.x, 0, `r≈${fmt(res.x, 5)}`, "#8b2e1a");
+        } catch (err) {
+          setResult("new-out", err.message, "err");
+          const plot = createPlot(document.getElementById("new-plot"), -1, 1, -1, 1, "Error de entrada");
+          plot.text(-0.95, 0.65, "No se pudo iterar Newton.", "#8b2e1a");
+        }
+      }
+
+      function runAitken() {
+        clearTable("ai-table");
+        try {
+          const seqRaw = document.getElementById("ai-seq").value.trim();
+          const seq = seqRaw
+            ? parseList(seqRaw)
+            : (() => {
+                const g = compileExpr(document.getElementById("ai-g").value, ["x"]);
+                const x0 = Number(document.getElementById("ai-x0").value);
+                const n = Number(document.getElementById("ai-n").value);
+                if (!(n >= 2 && Number.isInteger(n))) throw new Error("n debe ser entero >= 2.");
+                const s = [x0];
+                let x = x0;
+                for (let i = 0; i < n; i++) {
+                  x = g(x);
+                  s.push(x);
+                }
+                return s;
+              })();
+
+          const xStarRaw = document.getElementById("ai-xstar").value.trim();
+          const xStar = xStarRaw === "" ? null : Number(xStarRaw);
+          if (xStarRaw !== "" && !Number.isFinite(xStar)) throw new Error("x* inválido.");
+
+          const res = aitkenMethod(seq);
+          const last = [...res.rows].reverse().find(r => r.xhat !== null);
+          const lines = [
+            `Términos originales: ${seq.length}`,
+            `Términos Aitken válidos: ${res.accelerated.length}`,
+            last ? `Último Aitken: ${fmt(last.xhat)}` : "Último Aitken: n/d",
+          ];
+          if (xStar !== null && last && Number.isFinite(last.xhat)) {
+            const e0 = Math.abs(seq[seq.length - 1] - xStar);
+            const ea = Math.abs(last.xhat - xStar);
+            const factor = ea > 0 ? e0 / ea : Infinity;
+            lines.push(`Error original: ${fmt(e0)}`);
+            lines.push(`Error Aitken: ${fmt(ea)}`);
+            lines.push(`Mejora aprox: ${Number.isFinite(factor) ? fmt(factor, 4) + "x" : "infinita"}`);
+          }
+          setResult("ai-out", lines.join("\n"), "ok");
+
+          renderTable(
+            "ai-table",
+            ["k", "x_k", "x_{k+1}", "x_{k+2}", "x_hat"],
+            res.rows.map(r => [r.k, fmt(r.x0), fmt(r.x1), fmt(r.x2), r.xhat === null ? "" : fmt(r.xhat)])
+          );
+
+          const originalPts = seq.map((v, i) => [i, v]);
+          const aitkenPts = res.rows
+            .filter(r => r.xhat !== null)
+            .map(r => [r.k, r.xhat]);
+          const ys = seq.concat(res.accelerated);
+          const [y0, y1] = expandRange(...getMinMax(ys), 0.15);
+          const plot = createPlot(
+            document.getElementById("ai-plot"),
+            0,
+            Math.max(2, seq.length - 1),
+            y0,
+            y1,
+            "Secuencia original vs Aitken"
+          );
+          plot.line(originalPts, "#0c7b72", 2.1);
+          plot.dots(originalPts, "#0c7b72", 2.5);
+          if (aitkenPts.length) {
+            plot.line(aitkenPts, "#cf5b37", 2.1);
+            plot.dots(aitkenPts, "#cf5b37", 3);
+          }
+        } catch (err) {
+          setResult("ai-out", err.message, "err");
+          const plot = createPlot(document.getElementById("ai-plot"), -1, 1, -1, 1, "Error de entrada");
+          plot.text(-0.95, 0.65, "No se pudo aplicar Aitken.", "#8b2e1a");
+        }
+      }
+
+      function runLagrange() {
+        clearTable("lag-table");
+        try {
+          const xs = parseList(document.getElementById("lag-x").value);
+          const ys = parseList(document.getElementById("lag-y").value);
+          if (xs.length !== ys.length) throw new Error("x e y deben tener igual longitud.");
+          if (new Set(xs).size !== xs.length) throw new Error("Los nodos x deben ser distintos.");
+          if (xs.length < 2) throw new Error("Se requieren al menos 2 nodos.");
+          const xEval = parseList(document.getElementById("lag-xeval").value);
+          const fRealRaw = document.getElementById("lag-freal").value.trim();
+          const fReal = fRealRaw ? compileExpr(fRealRaw, ["x"]) : null;
+
+          const rows = [];
+          const errs = [];
+          for (const x of xEval) {
+            const p = lagrangeEval(xs, ys, x);
+            if (fReal) {
+              const tr = fReal(x);
+              const e = Math.abs(tr - p);
+              errs.push(e);
+              rows.push([fmt(x), fmt(p), fmt(tr), fmt(e)]);
+            } else {
+              rows.push([fmt(x), fmt(p), "", ""]);
+            }
+          }
+          renderTable("lag-table", ["x", "P(x)", "f(x)", "error"], rows, 500);
+
+          const msg = [
+            `Grado del polinomio: ${xs.length - 1}`,
+            `Puntos evaluados: ${xEval.length}`,
+            errs.length ? `Error máximo: ${fmt(Math.max(...errs))}` : "Error máximo: n/d (sin función real)",
+          ].join("\n");
+          setResult("lag-out", msg, "ok");
+
+          const minX = Math.min(...xs);
+          const maxX = Math.max(...xs);
+          const [a, b] = expandRange(minX, maxX, 0.2);
+          const curve = [];
+          for (let i = 0; i <= 420; i++) {
+            const x = a + ((b - a) * i) / 420;
+            const y = lagrangeEval(xs, ys, x);
+            if (Number.isFinite(y)) curve.push([x, y]);
+          }
+          const real = [];
+          if (fReal) {
+            for (let i = 0; i <= 420; i++) {
+              const x = a + ((b - a) * i) / 420;
+              const y = fReal(x);
+              if (Number.isFinite(y)) real.push([x, y]);
+            }
+          }
+          const allY = curve.map(p => p[1]).concat(ys, real.map(r => r[1]));
+          const [y0, y1] = expandRange(...getMinMax(allY), 0.14);
+          const plot = createPlot(document.getElementById("lag-plot"), a, b, y0, y1, "Polinomio interpolante");
+          if (real.length) plot.line(real, "rgba(31,49,94,0.65)", 1.8);
+          plot.line(curve, "#0c7b72", 2.1);
+          plot.dots(xs.map((x, i) => [x, ys[i]]), "#cf5b37", 3.3);
+        } catch (err) {
+          setResult("lag-out", err.message, "err");
+          const plot = createPlot(document.getElementById("lag-plot"), -1, 1, -1, 1, "Error de entrada");
+          plot.text(-0.95, 0.65, "No se pudo interpolar.", "#8b2e1a");
+        }
+      }
+
+      function runDerivacion() {
+        clearTable("der-table");
+        const mode = document.getElementById("der-mode").value;
+        try {
+          if (mode === "datos") {
+            const xs = parseList(document.getElementById("der-x").value);
+            const ys = parseList(document.getElementById("der-y").value);
+            if (xs.length !== ys.length) throw new Error("x e y deben tener igual longitud.");
+            const tipo = document.getElementById("der-tipo").value;
+            const esquema = document.getElementById("der-esquema").value;
+            const idxRaw = document.getElementById("der-indice").value.trim();
+
+            const rows = [];
+            const points = [];
+            if (idxRaw !== "") {
+              const idx = Number(idxRaw);
+              if (!Number.isInteger(idx)) throw new Error("Índice puntual inválido.");
+              const [val, ord] = derivativeFromData(xs, ys, tipo, esquema, idx);
+              rows.push([idx, fmt(xs[idx]), fmt(val), ord]);
+              points.push([xs[idx], val]);
+            } else {
+              for (const i of validIndices(xs.length, tipo, esquema)) {
+                const [val, ord] = derivativeFromData(xs, ys, tipo, esquema, i);
+                rows.push([i, fmt(xs[i]), fmt(val), ord]);
+                points.push([xs[i], val]);
+              }
+            }
+
+            renderTable("der-table", ["i", "x_i", "derivada", "orden teórico"], rows);
+            setResult(
+              "der-out",
+              [
+                `Modo: datos discretos`,
+                `Tipo: ${tipo}`,
+                `Esquema: ${esquema}`,
+                `Resultados: ${rows.length}`,
+              ].join("\n"),
+              "ok"
+            );
+
+            const [x0, x1] = expandRange(...getMinMax(points.map(p => p[0])), 0.16);
+            const [y0, y1] = expandRange(...getMinMax(points.map(p => p[1])), 0.16);
+            const plot = createPlot(document.getElementById("der-plot"), x0, x1, y0, y1, "Derivada aproximada");
+            plot.line(points, "#0c7b72", 2.1);
+            plot.dots(points, "#cf5b37", 3);
+            return;
+          }
+
+          if (mode === "parcial") {
+            const expr = document.getElementById("der-f").value;
+            const vars = document.getElementById("der-vars").value.split(",").map(v => v.trim()).filter(Boolean);
+            const point = parseList(document.getElementById("der-point").value);
+            const target = document.getElementById("der-var-target").value.trim();
+            const order = Number(document.getElementById("der-orden").value);
+            const esquema = document.getElementById("der-esquema2").value;
+            const h = Number(document.getElementById("der-h").value);
+            if (vars.length !== point.length) throw new Error("vars y point deben tener igual longitud.");
+            if (!(h > 0)) throw new Error("h inválido.");
+
+            const [val, ordTeo] = partialFinite(expr, vars, point, target, order, esquema, h);
+            setResult(
+              "der-out",
+              [
+                `Modo: derivada parcial`,
+                `Variable: ${target}`,
+                `Orden derivada: ${order}`,
+                `Esquema: ${esquema}`,
+                `Aprox: ${fmt(val)}`,
+                `Orden teórico: ${ordTeo}`,
+              ].join("\n"),
+              "ok"
+            );
+            renderTable("der-table", ["variable", "valor aproximado", "orden teórico"], [[target, fmt(val), ordTeo]]);
+            const plot = createPlot(document.getElementById("der-plot"), -1, 1, -1, 1, "Derivada parcial");
+            plot.text(-0.95, 0.6, `∂^${order}f/∂${target}^${order} ≈ ${fmt(val, 6)}`, "#155e56");
+            return;
+          }
+
+          const exprF = document.getElementById("der-f0").value;
+          const exprD3 = document.getElementById("der-d3f").value;
+          const x0 = Number(document.getElementById("der-x0").value);
+          const eps = Number(document.getElementById("der-eps").value);
+          const hopt = optimalStep(exprF, exprD3, x0, eps);
+          setResult(
+            "der-out",
+            [
+              "Modo: paso óptimo",
+              "Fórmula: h_opt = ((3*eps*|f(x0)|)/|f'''(x0)|)^(1/3)",
+              `x0: ${fmt(x0)}`,
+              `h_opt: ${fmt(hopt)}`,
+            ].join("\n"),
+            "ok"
+          );
+          renderTable("der-table", ["x0", "eps", "h_opt"], [[fmt(x0), fmt(eps), fmt(hopt)]]);
+          const plot = createPlot(document.getElementById("der-plot"), -1, 1, -1, 1, "Paso óptimo");
+          plot.text(-0.95, 0.6, `h_opt ≈ ${fmt(hopt, 6)}`, "#155e56");
+        } catch (err) {
+          setResult("der-out", err.message, "err");
+          const plot = createPlot(document.getElementById("der-plot"), -1, 1, -1, 1, "Error de entrada");
+          plot.text(-0.95, 0.65, "No se pudo calcular.", "#8b2e1a");
+        }
+      }
+
+      function runIntegracion() {
+        clearTable("int-table");
+        try {
+          const f = compileExpr(document.getElementById("int-f").value, ["x"]);
+          const a = Number(document.getElementById("int-a").value);
+          const b = Number(document.getElementById("int-b").value);
+          const n = Number(document.getElementById("int-n").value);
+          const method = document.getElementById("int-metodo").value;
+          const rule = document.getElementById("int-regla").value;
+          if (!(b > a)) throw new Error("Debe cumplirse b > a.");
+          if (!(n > 0 && Number.isInteger(n))) throw new Error("n inválido.");
+          const iN = integrate(f, method, a, b, n, rule);
+          const p = methodOrder(method, rule);
+          const i2N = integrate(f, method, a, b, 2 * n, rule);
+          const i4N = integrate(f, method, a, b, 4 * n, rule);
+          const errEst = Math.abs(i2N - iN) / (2 ** p - 1);
+          const den = Math.abs(i2N - iN);
+          const num = Math.abs(i4N - i2N);
+          const pObs = den > 0 && num > 0 ? Math.log2(den / num) : null;
+
+          setResult(
+            "int-out",
+            [
+              `Integral aprox: ${fmt(iN)}`,
+              `Método: ${method}${method === "rectangulos" ? " (" + rule + ")" : ""}`,
+              `Orden teórico: ${p}`,
+              `Error estimado (Richardson): ${fmt(errEst)}`,
+              pObs === null ? "Orden observado: n/d" : `Orden observado: ${fmt(pObs, 4)}`,
+            ].join("\n"),
+            "ok"
+          );
+
+          renderTable("int-table", ["n", "I_n", "I_2n", "I_4n", "err est."], [[n, fmt(iN), fmt(i2N), fmt(i4N), fmt(errEst)]]);
+
+          const curve = sampleFunction(f, a, b, 420);
+          const ys = curve.map(p0 => p0[1]).concat([0]);
+          const [y0, y1] = expandRange(...getMinMax(ys), 0.18);
+          const plot = createPlot(document.getElementById("int-plot"), a, b, y0, y1, "Área de integración");
+          plot.line(curve, "#0c7b72", 2.1);
+
+          const m = Math.min(n, 120);
+          const h = (b - a) / m;
+          if (method === "rectangulos") {
+            for (let i = 0; i < m; i++) {
+              const xL = a + i * h;
+              const xR = xL + h;
+              const xRef = rule === "left" ? xL : (rule === "right" ? xR : xL + 0.5 * h);
+              const y = f(xRef);
+              const poly = [[xL, 0], [xL, y], [xR, y], [xR, 0]];
+              plot.polyFill(poly, "rgba(207,91,55,0.12)");
+            }
+          } else {
+            const area = [[a, 0], ...curve, [b, 0]];
+            plot.polyFill(area, "rgba(207,91,55,0.11)");
+            for (let i = 0; i <= m; i++) plot.vline(a + i * h, "rgba(38,52,50,0.2)", 1);
+          }
+        } catch (err) {
+          setResult("int-out", err.message, "err");
+          const plot = createPlot(document.getElementById("int-plot"), -1, 1, -1, 1, "Error de entrada");
+          plot.text(-0.95, 0.65, "No se pudo integrar.", "#8b2e1a");
+        }
+      }
+
+      function runMonteCarlo() {
+        clearTable("mc-table");
+        try {
+          const expr = document.getElementById("mc-f").value;
+          const bounds = parseBounds(document.getElementById("mc-bounds").value);
+          const n = Number(document.getElementById("mc-n").value);
+          const alpha = Number(document.getElementById("mc-alpha").value);
+          const seedRaw = document.getElementById("mc-seed").value.trim();
+          const targetRaw = document.getElementById("mc-target").value.trim();
+          const seed = seedRaw === "" ? null : Number(seedRaw);
+          const target = targetRaw === "" ? null : Number(targetRaw);
+          if (!(n > 0 && Number.isInteger(n))) throw new Error("n inválido.");
+          if (!(alpha > 0 && alpha < 1)) throw new Error("alpha debe estar entre 0 y 1.");
+          if (seedRaw !== "" && !Number.isFinite(seed)) throw new Error("Semilla inválida.");
+          if (targetRaw !== "" && !(target > 0)) throw new Error("Error objetivo inválido.");
+
+          const out = mcIntegrate(expr, bounds, n, alpha, seed);
+          const z = invNorm(1 - alpha / 2);
+          const lines = [
+            `Dimensión: ${out.dim}`,
+            `Integral aprox: ${fmt(out.estimate)}`,
+            `Var(estimador): ${fmt(out.varEstimator)}`,
+            `Error estándar: ${fmt(out.se)}`,
+            `IC ${(100 * (1 - alpha)).toFixed(1)}%: [${fmt(out.ci[0])}, ${fmt(out.ci[1])}]`,
+          ];
+
+          if (target !== null) {
+            const sigma2 = out.varEstimator * n;
+            const nReq = Math.ceil((z * Math.sqrt(Math.max(0, sigma2)) / target) ** 2);
+            lines.push(`n recomendado para error ${fmt(target)}: ${nReq}`);
+            renderTable("mc-table", ["n actual", "estimación", "SE", "n recomendado"], [[n, fmt(out.estimate), fmt(out.se), nReq]]);
+          } else {
+            renderTable("mc-table", ["n", "estimación", "SE"], [[n, fmt(out.estimate), fmt(out.se)]]);
+          }
+
+          setResult("mc-out", lines.join("\n"), "ok");
+
+          const conv = out.conv;
+          const [x0, x1] = expandRange(...getMinMax(conv.map(p => p[0])), 0.08);
+          const [y0, y1] = expandRange(...getMinMax(conv.map(p => p[1])), 0.12);
+          const plot = createPlot(document.getElementById("mc-plot"), x0, x1, y0, y1, "Convergencia Monte Carlo");
+          plot.line(conv, "#0c7b72", 2.1);
+          plot.dots([conv[conv.length - 1]], "#cf5b37", 3.4);
+          plot.text(conv[conv.length - 1][0], conv[conv.length - 1][1], `I≈${fmt(out.estimate, 5)}`, "#8b2e1a");
+        } catch (err) {
+          setResult("mc-out", err.message, "err");
+          const plot = createPlot(document.getElementById("mc-plot"), -1, 1, -1, 1, "Error de entrada");
+          plot.text(-0.95, 0.65, "No se pudo ejecutar Monte Carlo.", "#8b2e1a");
+        }
+      }
+
+      function setupDerivMode() {
+        const modeSelect = document.getElementById("der-mode");
+        function update() {
+          const mode = modeSelect.value;
+          document.getElementById("der-datos").style.display = mode === "datos" ? "grid" : "none";
+          document.getElementById("der-parcial").style.display = mode === "parcial" ? "grid" : "none";
+          document.getElementById("der-paso").style.display = mode === "paso-optimo" ? "grid" : "none";
+        }
+        modeSelect.addEventListener("change", update);
+        update();
+      }
+
+      function attachHandlers() {
+        document.getElementById("bis-run").addEventListener("click", runBiseccion);
+        document.getElementById("pf-run").addEventListener("click", runPuntoFijo);
+        document.getElementById("new-run").addEventListener("click", runNewton);
+        document.getElementById("ai-run").addEventListener("click", runAitken);
+        document.getElementById("lag-run").addEventListener("click", runLagrange);
+        document.getElementById("der-run").addEventListener("click", runDerivacion);
+        document.getElementById("int-run").addEventListener("click", runIntegracion);
+        document.getElementById("mc-run").addEventListener("click", runMonteCarlo);
+
+        let resizeTimer = null;
+        window.addEventListener("resize", () => {
+          window.clearTimeout(resizeTimer);
+          resizeTimer = window.setTimeout(() => {
+            const active = document.querySelector(".panel.active");
+            if (!active) return;
+            runByTabId(active.id);
+          }, 120);
+        });
+      }
+
+      setupTabs();
+      setupDerivMode();
+      attachHandlers();
+      const activeAtStart = document.querySelector(".panel.active");
+      if (activeAtStart) runByTabId(activeAtStart.id);
+    })();
+  </script>
+</body>
+</html>

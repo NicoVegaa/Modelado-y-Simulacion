@@ -1,0 +1,4 @@
+# Este proyecto no necesita paquetes externos de pip.
+# Funciona con la libreria estandar de Python.
+# Version recomendada: Python 3.10 o superior.
+
