@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { FieldHint } from '../components/common/FieldHint';
 import { IterationTable } from '../components/common/IterationTable';
+import { MethodFormulaInfo } from '../components/common/MethodFormulaInfo';
 import { aitkenExamples } from '../data/examples';
 import { runAitken } from '../utils/algorithms/aitken';
 import { copyText, toCsv } from '../utils/csv';
@@ -15,6 +16,7 @@ export const AitkenTab = () => {
   const [result, setResult] = useState<AitkenResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [elapsedMs, setElapsedMs] = useState<number | null>(null);
 
   const handleExample = (index: string) => {
     if (!index) {
@@ -32,15 +34,19 @@ export const AitkenTab = () => {
   const handleCalculate = () => {
     setError(null);
     try {
+      const startTime = performance.now();
       const output = runAitken({
         gExpression: gx,
         x0: parseNumeric(x0),
         iterationsToShow: Number(iterationsToShow),
       });
+      const durationMs = performance.now() - startTime;
       setResult(output);
       setMessage('Calculo completado.');
+      setElapsedMs(durationMs);
     } catch (err) {
       setResult(null);
+      setElapsedMs(null);
       setError(err instanceof Error ? err.message : 'No se pudo calcular.');
     }
   };
@@ -50,6 +56,7 @@ export const AitkenTab = () => {
     setX0('0.5');
     setIterationsToShow('10');
     setResult(null);
+    setElapsedMs(null);
     setError(null);
     setMessage(null);
   };
@@ -61,8 +68,8 @@ export const AitkenTab = () => {
     }
     await copyText(
       toCsv(
-        ['n', 'x_n', 'x_hat_n', 'diferencia'],
-        result.iterations.map((item) => [item.n, item.xn, item.xhat, item.difference])
+        ['n', 'x_n', 'x_(n+1)=g(x_n)', 'x_(n+2)=g(x_(n+1))', 'x_hat_n', 'diferencia'],
+        result.iterations.map((item) => [item.n, item.xn, item.xn1, item.xn2, item.xhat, item.difference])
       )
     );
     setMessage('Tabla copiada en CSV.');
@@ -121,9 +128,12 @@ export const AitkenTab = () => {
 
         {error ? <p className="rounded-md bg-rose-50 p-2 text-sm text-rose-700">{error}</p> : null}
         {message ? <p className="rounded-md bg-emerald-50 p-2 text-sm text-emerald-700">{message}</p> : null}
+        {elapsedMs !== null ? <p className="rounded-md bg-sky-50 p-2 text-sm text-sky-700">Tiempo de convergencia: {elapsedMs.toFixed(3)} ms.</p> : null}
       </div>
 
       <div className="space-y-4">
+        <MethodFormulaInfo method="aitken" />
+
         <div className="h-80 rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
           <h3 className="mb-3 text-base font-semibold text-slate-900">Convergencia comparada</h3>
           <ResponsiveContainer width="100%" height="85%">
@@ -141,8 +151,15 @@ export const AitkenTab = () => {
 
         {result ? (
           <IterationTable
-            headers={['n', 'x_n', 'x_hat_n', 'diferencia']}
-            rows={result.iterations.map((item) => [item.n, formatNum(item.xn), formatNum(item.xhat), formatNum(item.difference)])}
+            headers={['n', 'x_n', 'x_(n+1)=g(x_n)', 'x_(n+2)=g(x_(n+1))', 'x_hat_n', 'diferencia']}
+            rows={result.iterations.map((item) => [
+              item.n,
+              formatNum(item.xn),
+              formatNum(item.xn1),
+              formatNum(item.xn2),
+              formatNum(item.xhat),
+              formatNum(item.difference),
+            ])}
           />
         ) : null}
       </div>

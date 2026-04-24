@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { FieldHint } from '../components/common/FieldHint';
 import { IterationTable } from '../components/common/IterationTable';
 import { ResultSummary } from '../components/common/ResultSummary';
+import { MethodFormulaInfo } from '../components/common/MethodFormulaInfo';
 import { newtonExamples } from '../data/examples';
 import { runNewtonRaphson } from '../utils/algorithms/newtonRaphson';
 import { copyText, toCsv } from '../utils/csv';
@@ -18,6 +19,7 @@ export const NewtonRaphsonTab = () => {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [result, setResult] = useState<NewtonResult | null>(null);
+  const [elapsedMs, setElapsedMs] = useState<number | null>(null);
 
   const handleExampleChange = (index: string) => {
     if (!index) {
@@ -55,6 +57,7 @@ export const NewtonRaphsonTab = () => {
     }
 
     try {
+      const startTime = performance.now();
       const output = runNewtonRaphson({
         expression: fx,
         derivativeExpression: dfx.trim() || undefined,
@@ -62,11 +65,14 @@ export const NewtonRaphsonTab = () => {
         tolerance: toleranceValue,
         maxIterations: maxIterValue,
       });
+      const durationMs = performance.now() - startTime;
 
       setResult(output);
       setMessage('Calculo completado correctamente.');
+      setElapsedMs(durationMs);
     } catch (algorithmError) {
       setResult(null);
+      setElapsedMs(null);
       setError(algorithmError instanceof Error ? algorithmError.message : 'No se pudo calcular.');
     }
   };
@@ -78,6 +84,7 @@ export const NewtonRaphsonTab = () => {
     setTolerance('1e-8');
     setMaxIterations('50');
     setResult(null);
+    setElapsedMs(null);
     setError(null);
     setMessage(null);
   };
@@ -208,9 +215,12 @@ export const NewtonRaphsonTab = () => {
 
         {error ? <p className="rounded-md bg-rose-50 p-2 text-sm text-rose-700">{error}</p> : null}
         {message ? <p className="rounded-md bg-emerald-50 p-2 text-sm text-emerald-700">{message}</p> : null}
+        {elapsedMs !== null ? <p className="rounded-md bg-sky-50 p-2 text-sm text-sky-700">Tiempo de convergencia: {elapsedMs.toFixed(3)} ms.</p> : null}
       </div>
 
       <div className="space-y-4">
+        <MethodFormulaInfo method="newton-raphson" />
+
         {result ? (
           <ResultSummary
             title="Resultado final"
@@ -218,6 +228,7 @@ export const NewtonRaphsonTab = () => {
               { label: 'Raiz aproximada', value: format(result.root) },
               { label: 'Iteraciones', value: String(result.iterationsUsed) },
               { label: 'Error final', value: format(result.finalError) },
+              { label: 'Tiempo de convergencia', value: elapsedMs !== null ? `${elapsedMs.toFixed(3)} ms` : 'N/A' },
             ]}
           />
         ) : null}

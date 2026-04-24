@@ -3,6 +3,7 @@ import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, X
 import { FieldHint } from '../components/common/FieldHint';
 import { IterationTable } from '../components/common/IterationTable';
 import { ResultSummary } from '../components/common/ResultSummary';
+import { MethodFormulaInfo } from '../components/common/MethodFormulaInfo';
 import { newtonCotesExamples } from '../data/examples';
 import { runNewtonCotes, type NewtonCotesRule } from '../utils/algorithms/newtonCotes';
 import { copyText, toCsv } from '../utils/csv';
@@ -27,6 +28,7 @@ export const NewtonCotesTab = () => {
   const [results, setResults] = useState<ReturnType<typeof runNewtonCotes>>([]);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [elapsedMs, setElapsedMs] = useState<number | null>(null);
 
   const applyExample = (index: string) => {
     if (!index) {
@@ -55,6 +57,7 @@ export const NewtonCotesTab = () => {
       if (selectedRules.length === 0) {
         throw new Error('Seleccione al menos una regla de cuadratura.');
       }
+      const startTime = performance.now();
       const output = runNewtonCotes({
         expression: fx,
         a: parseNumeric(a),
@@ -62,10 +65,13 @@ export const NewtonCotesTab = () => {
         n: Number(n),
         rules: selectedRules,
       });
+      const durationMs = performance.now() - startTime;
       setResults(output);
       setMessage('Integrales calculadas correctamente.');
+      setElapsedMs(durationMs);
     } catch (err) {
       setResults([]);
+      setElapsedMs(null);
       setError(err instanceof Error ? err.message : 'No se pudo calcular.');
     }
   };
@@ -77,6 +83,7 @@ export const NewtonCotesTab = () => {
     setN('10');
     setSelectedRules(['trapecio']);
     setResults([]);
+    setElapsedMs(null);
     setError(null);
     setMessage(null);
   };
@@ -172,9 +179,12 @@ export const NewtonCotesTab = () => {
 
         {error ? <p className="rounded-md bg-rose-50 p-2 text-sm text-rose-700">{error}</p> : null}
         {message ? <p className="rounded-md bg-emerald-50 p-2 text-sm text-emerald-700">{message}</p> : null}
+        {elapsedMs !== null ? <p className="rounded-md bg-sky-50 p-2 text-sm text-sky-700">Tiempo de convergencia: {elapsedMs.toFixed(3)} ms.</p> : null}
       </div>
 
       <div className="space-y-4">
+        <MethodFormulaInfo method="newton-cotes" />
+
         <div className="h-80 rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
           <h3 className="mb-3 text-base font-semibold text-slate-900">f(x) y area aproximada</h3>
           <ResponsiveContainer width="100%" height="85%">
@@ -192,10 +202,13 @@ export const NewtonCotesTab = () => {
         {results.length > 0 ? (
           <ResultSummary
             title="Comparacion de reglas"
-            values={results.slice(0, 3).map((item) => ({
-              label: item.rule,
-              value: `${formatNum(item.estimate, 8)} (err: ${item.truncationError ? formatNum(item.truncationError, 6) : 'N/A'})`,
-            }))}
+            values={[
+              ...results.slice(0, 2).map((item) => ({
+                label: item.rule,
+                value: `${formatNum(item.estimate, 8)} (err: ${item.truncationError ? formatNum(item.truncationError, 6) : 'N/A'})`,
+              })),
+              { label: 'Tiempo de convergencia', value: elapsedMs !== null ? `${elapsedMs.toFixed(3)} ms` : 'N/A' },
+            ]}
           />
         ) : null}
 

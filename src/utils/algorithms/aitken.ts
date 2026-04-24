@@ -24,7 +24,7 @@ export const runAitken = ({ gExpression, x0, iterationsToShow }: AitkenParams): 
     const denom = x2 - 2 * x1 + xn;
     const xhat = Math.abs(denom) < 1e-12 ? Number.NaN : xn - ((x1 - xn) ** 2) / denom;
     const difference = Number.isFinite(xhat) ? Math.abs(xhat - x2) : Number.NaN;
-    iterations.push({ n: n + 1, xn, xhat, difference });
+    iterations.push({ n: n + 1, xn, xn1: x1, xn2: x2, xhat, difference });
   }
 
   return { iterations };

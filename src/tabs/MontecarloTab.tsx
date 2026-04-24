@@ -3,6 +3,7 @@ import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Scatter, S
 import { FieldHint } from '../components/common/FieldHint';
 import { IterationTable } from '../components/common/IterationTable';
 import { ResultSummary } from '../components/common/ResultSummary';
+import { MethodFormulaInfo } from '../components/common/MethodFormulaInfo';
 import { monteCarloExamples } from '../data/examples';
 import { runMonteCarlo, type MonteCarloMode } from '../utils/algorithms/montecarlo';
 import { copyText, toCsv } from '../utils/csv';
@@ -22,6 +23,7 @@ export const MontecarloTab = () => {
   const [result, setResult] = useState<MonteCarloResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [elapsedMs, setElapsedMs] = useState<number | null>(null);
 
   const applyExample = (index: string) => {
     if (!index) {
@@ -45,6 +47,7 @@ export const MontecarloTab = () => {
   const handleCalculate = () => {
     setError(null);
     try {
+      const startTime = performance.now();
       const output = runMonteCarlo({
         mode,
         expression,
@@ -56,10 +59,13 @@ export const MontecarloTab = () => {
         n: Number(n),
         confidence,
       });
+      const durationMs = performance.now() - startTime;
       setResult(output);
       setMessage('Simulacion completada.');
+      setElapsedMs(durationMs);
     } catch (err) {
       setResult(null);
+      setElapsedMs(null);
       setError(err instanceof Error ? err.message : 'No se pudo simular.');
     }
   };
@@ -85,6 +91,7 @@ export const MontecarloTab = () => {
     setN('5000');
     setConfidence('95%');
     setResult(null);
+    setElapsedMs(null);
     setError(null);
     setMessage(null);
   };
@@ -192,9 +199,12 @@ export const MontecarloTab = () => {
 
         {error ? <p className="rounded-md bg-rose-50 p-2 text-sm text-rose-700">{error}</p> : null}
         {message ? <p className="rounded-md bg-emerald-50 p-2 text-sm text-emerald-700">{message}</p> : null}
+        {elapsedMs !== null ? <p className="rounded-md bg-sky-50 p-2 text-sm text-sky-700">Tiempo de convergencia: {elapsedMs.toFixed(3)} ms.</p> : null}
       </div>
 
       <div className="space-y-4">
+        <MethodFormulaInfo method="montecarlo" />
+
         {result ? (
           <ResultSummary
             title="Resumen estadistico"
@@ -202,6 +212,7 @@ export const MontecarloTab = () => {
               { label: 'Estimacion', value: formatNum(result.estimate, 8) },
               { label: 'Std. error', value: formatNum(result.stdError, 8) },
               { label: 'IC', value: `[${formatNum(result.ciLow, 8)}, ${formatNum(result.ciHigh, 8)}]` },
+              { label: 'Tiempo de convergencia', value: elapsedMs !== null ? `${elapsedMs.toFixed(3)} ms` : 'N/A' },
             ]}
           />
         ) : null}

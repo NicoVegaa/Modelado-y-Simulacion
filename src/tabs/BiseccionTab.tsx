@@ -3,6 +3,7 @@ import { bisectionExamples } from '../data/examples';
 import { FieldHint } from '../components/common/FieldHint';
 import { IterationTable } from '../components/common/IterationTable';
 import { ResultSummary } from '../components/common/ResultSummary';
+import { MethodFormulaInfo } from '../components/common/MethodFormulaInfo';
 import { FunctionChart } from '../components/charts/FunctionChart';
 import { runBisection } from '../utils/algorithms/bisection';
 import { evaluateExpression } from '../utils/mathParser';
@@ -20,6 +21,7 @@ export const BiseccionTab = () => {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<BisectionResult | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [elapsedMs, setElapsedMs] = useState<number | null>(null);
 
   const handleExampleChange = (index: string) => {
     if (!index) {
@@ -63,6 +65,7 @@ export const BiseccionTab = () => {
     }
 
     try {
+      const startTime = performance.now();
       const output = runBisection({
         expression: fx,
         a: aValue,
@@ -70,10 +73,13 @@ export const BiseccionTab = () => {
         tolerance: tolValue,
         maxIterations: maxIterValue,
       });
+      const durationMs = performance.now() - startTime;
       setResult(output);
       setMessage('Calculo completado correctamente.');
+      setElapsedMs(durationMs);
     } catch (algorithmError) {
       setResult(null);
+      setElapsedMs(null);
       setError(algorithmError instanceof Error ? algorithmError.message : 'No se pudo calcular.');
     }
   };
@@ -85,6 +91,7 @@ export const BiseccionTab = () => {
     setTolerance('0.001');
     setMaxIterations('100');
     setResult(null);
+    setElapsedMs(null);
     setError(null);
     setMessage(null);
   };
@@ -248,9 +255,12 @@ export const BiseccionTab = () => {
 
         {error ? <p className="rounded-md bg-rose-50 p-2 text-sm text-rose-700">{error}</p> : null}
         {message ? <p className="rounded-md bg-emerald-50 p-2 text-sm text-emerald-700">{message}</p> : null}
+        {elapsedMs !== null ? <p className="rounded-md bg-sky-50 p-2 text-sm text-sky-700">Tiempo de convergencia: {elapsedMs.toFixed(3)} ms.</p> : null}
       </div>
 
       <div className="space-y-4">
+        <MethodFormulaInfo method="biseccion" />
+
         {result ? (
           <ResultSummary
             title="Resultado final"
@@ -258,6 +268,7 @@ export const BiseccionTab = () => {
               { label: 'Raiz aproximada', value: format(result.root) },
               { label: 'Iteraciones', value: String(result.iterationsUsed) },
               { label: 'Error final', value: format(result.finalError) },
+              { label: 'Tiempo de convergencia', value: elapsedMs !== null ? `${elapsedMs.toFixed(3)} ms` : 'N/A' },
             ]}
           />
         ) : null}

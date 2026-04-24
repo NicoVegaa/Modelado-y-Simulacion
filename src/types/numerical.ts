@@ -60,6 +60,8 @@ export interface FixedPointResult {
 export interface AitkenIteration {
   n: number;
   xn: number;
+  xn1: number;
+  xn2: number;
   xhat: number;
   difference: number;
 }

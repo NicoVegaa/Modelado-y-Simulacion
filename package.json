@@ -10,15 +10,18 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "katex": "^0.16.45",
     "mathjs": "^14.5.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-katex": "^3.1.0",
     "recharts": "^2.15.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.15",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
+    "@types/react-katex": "^3.0.4",
     "@vitejs/plugin-react": "^4.4.1",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.5.2",

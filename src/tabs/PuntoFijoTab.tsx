@@ -3,6 +3,7 @@ import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, X
 import { FieldHint } from '../components/common/FieldHint';
 import { IterationTable } from '../components/common/IterationTable';
 import { ResultSummary } from '../components/common/ResultSummary';
+import { MethodFormulaInfo } from '../components/common/MethodFormulaInfo';
 import { fixedPointExamples } from '../data/examples';
 import { runFixedPoint } from '../utils/algorithms/fixedPoint';
 import { buildFunctionPoints } from '../utils/plot';
@@ -18,6 +19,7 @@ export const PuntoFijoTab = () => {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [result, setResult] = useState<FixedPointResult | null>(null);
+  const [elapsedMs, setElapsedMs] = useState<number | null>(null);
 
   const handleExample = (index: string) => {
     if (!index) {
@@ -37,13 +39,16 @@ export const PuntoFijoTab = () => {
     setError(null);
     setMessage(null);
     try {
+      const startTime = performance.now();
       const output = runFixedPoint({
         gExpression: gx,
         x0: parseNumeric(x0),
         tolerance: parseNumeric(tolerance),
         maxIterations: Number(maxIterations),
       });
+      const durationMs = performance.now() - startTime;
       setResult(output);
+      setElapsedMs(durationMs);
       if (output.diverged) {
         setMessage('Se detecto divergencia: la sucesion crece sin limite.');
       } else {
@@ -51,6 +56,7 @@ export const PuntoFijoTab = () => {
       }
     } catch (err) {
       setResult(null);
+      setElapsedMs(null);
       setError(err instanceof Error ? err.message : 'No se pudo calcular.');
     }
   };
@@ -61,6 +67,7 @@ export const PuntoFijoTab = () => {
     setTolerance('1e-4');
     setMaxIterations('100');
     setResult(null);
+    setElapsedMs(null);
     setError(null);
     setMessage(null);
   };
@@ -157,9 +164,12 @@ export const PuntoFijoTab = () => {
 
         {error ? <p className="rounded-md bg-rose-50 p-2 text-sm text-rose-700">{error}</p> : null}
         {message ? <p className="rounded-md bg-emerald-50 p-2 text-sm text-emerald-700">{message}</p> : null}
+        {elapsedMs !== null ? <p className="rounded-md bg-sky-50 p-2 text-sm text-sky-700">Tiempo de convergencia: {elapsedMs.toFixed(3)} ms.</p> : null}
       </div>
 
       <div className="space-y-4">
+        <MethodFormulaInfo method="punto-fijo" />
+
         {result ? (
           <ResultSummary
             title="Resultado final"
@@ -167,6 +177,7 @@ export const PuntoFijoTab = () => {
               { label: 'Punto fijo', value: formatNum(result.root, 10) },
               { label: 'Iteraciones', value: String(result.iterationsUsed) },
               { label: 'Error final', value: formatNum(result.finalError, 10) },
+              { label: 'Tiempo de convergencia', value: elapsedMs !== null ? `${elapsedMs.toFixed(3)} ms` : 'N/A' },
             ]}
           />
         ) : null}

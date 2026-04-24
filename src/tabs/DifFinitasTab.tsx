@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { FieldHint } from '../components/common/FieldHint';
 import { IterationTable } from '../components/common/IterationTable';
+import { MethodFormulaInfo } from '../components/common/MethodFormulaInfo';
 import { finiteDifferenceExamples } from '../data/examples';
 import { runFiniteDifferences } from '../utils/algorithms/finiteDifferences';
 import { copyText, toCsv } from '../utils/csv';
@@ -19,6 +20,7 @@ export const DifFinitasTab = () => {
   const [records, setRecords] = useState<FiniteDifferenceRecord[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [elapsedMs, setElapsedMs] = useState<number | null>(null);
 
   const applyExample = (index: string) => {
     if (!index) {
@@ -40,6 +42,7 @@ export const DifFinitasTab = () => {
   const handleCalculate = () => {
     setError(null);
     try {
+      const startTime = performance.now();
       const xValues = parseNumericList(xList);
       const yValues = mode === 'tabla' ? parseNumericList(yList) : undefined;
       const output = runFiniteDifferences({
@@ -50,10 +53,13 @@ export const DifFinitasTab = () => {
         order: Number(order) as 1 | 2,
         method,
       });
+      const durationMs = performance.now() - startTime;
       setRecords(output);
       setMessage('Derivadas calculadas correctamente.');
+      setElapsedMs(durationMs);
     } catch (err) {
       setRecords([]);
+      setElapsedMs(null);
       setError(err instanceof Error ? err.message : 'No se pudo calcular.');
     }
   };
@@ -69,6 +75,7 @@ export const DifFinitasTab = () => {
     setOrder('1');
     setMethod('central');
     setRecords([]);
+    setElapsedMs(null);
     setError(null);
     setMessage(null);
   };
@@ -170,9 +177,12 @@ export const DifFinitasTab = () => {
 
         {error ? <p className="rounded-md bg-rose-50 p-2 text-sm text-rose-700">{error}</p> : null}
         {message ? <p className="rounded-md bg-emerald-50 p-2 text-sm text-emerald-700">{message}</p> : null}
+        {elapsedMs !== null ? <p className="rounded-md bg-sky-50 p-2 text-sm text-sky-700">Tiempo de convergencia: {elapsedMs.toFixed(3)} ms.</p> : null}
       </div>
 
       <div className="space-y-4">
+        <MethodFormulaInfo method="dif-finitas" />
+
         <div className="h-80 rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
           <h3 className="mb-3 text-base font-semibold text-slate-900">f(x) y derivada aproximada</h3>
           <ResponsiveContainer width="100%" height="85%">

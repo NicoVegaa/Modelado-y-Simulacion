@@ -3,6 +3,7 @@ import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Scatter, T
 import { FieldHint } from '../components/common/FieldHint';
 import { IterationTable } from '../components/common/IterationTable';
 import { ResultSummary } from '../components/common/ResultSummary';
+import { MethodFormulaInfo } from '../components/common/MethodFormulaInfo';
 import { lagrangeExamples } from '../data/examples';
 import type { LagrangeNode } from '../types/numerical';
 import { copyText } from '../utils/csv';
@@ -23,6 +24,7 @@ export const LagrangeTab = () => {
   const [result, setResult] = useState<ReturnType<typeof runLagrange> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [elapsedMs, setElapsedMs] = useState<number | null>(null);
 
   const applyExample = (index: string) => {
     if (!index) {
@@ -46,16 +48,20 @@ export const LagrangeTab = () => {
   const handleCalculate = () => {
     setError(null);
     try {
+      const startTime = performance.now();
       const output = runLagrange({
         nodes,
         xStar: parseNumeric(xStar),
         sourceFunction: sourceFunction.trim() || undefined,
         interval: sourceFunction.trim() ? { min: parseNumeric(intervalMin), max: parseNumeric(intervalMax) } : undefined,
       });
+      const durationMs = performance.now() - startTime;
       setResult(output);
       setMessage('Interpolacion calculada correctamente.');
+      setElapsedMs(durationMs);
     } catch (err) {
       setResult(null);
+      setElapsedMs(null);
       setError(err instanceof Error ? err.message : 'No se pudo calcular.');
     }
   };
@@ -71,6 +77,7 @@ export const LagrangeTab = () => {
     setIntervalMax('3');
     setXStar('2.5');
     setResult(null);
+    setElapsedMs(null);
     setError(null);
     setMessage(null);
   };
@@ -187,9 +194,12 @@ export const LagrangeTab = () => {
 
         {error ? <p className="rounded-md bg-rose-50 p-2 text-sm text-rose-700">{error}</p> : null}
         {message ? <p className="rounded-md bg-emerald-50 p-2 text-sm text-emerald-700">{message}</p> : null}
+        {elapsedMs !== null ? <p className="rounded-md bg-sky-50 p-2 text-sm text-sky-700">Tiempo de convergencia: {elapsedMs.toFixed(3)} ms.</p> : null}
       </div>
 
       <div className="space-y-4">
+        <MethodFormulaInfo method="lagrange" />
+
         {result ? (
           <ResultSummary
             title="Resultado interpolante"
@@ -197,6 +207,7 @@ export const LagrangeTab = () => {
               { label: 'P(x*)', value: formatNum(result.yAtXStar, 10) },
               { label: 'Error global', value: result.globalError ? formatNum(result.globalError, 8) : 'N/A' },
               { label: 'Error local', value: result.localError ? formatNum(result.localError, 8) : 'N/A' },
+              { label: 'Tiempo de convergencia', value: elapsedMs !== null ? `${elapsedMs.toFixed(3)} ms` : 'N/A' },
             ]}
           />
         ) : null}
