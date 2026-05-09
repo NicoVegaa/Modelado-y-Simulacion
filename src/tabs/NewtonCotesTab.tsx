@@ -24,6 +24,7 @@ export const NewtonCotesTab = () => {
   const [a, setA] = useState('0');
   const [b, setB] = useState('3.1415926536');
   const [n, setN] = useState('10');
+  const [unknownParameter, setUnknownParameter] = useState('');
   const [selectedRules, setSelectedRules] = useState<NewtonCotesRule[]>(['trapecio']);
   const [results, setResults] = useState<ReturnType<typeof runNewtonCotes>>([]);
   const [error, setError] = useState<string | null>(null);
@@ -57,6 +58,7 @@ export const NewtonCotesTab = () => {
       if (selectedRules.length === 0) {
         throw new Error('Seleccione al menos una regla de cuadratura.');
       }
+      const parsedUnknownParameter = unknownParameter.trim() ? parseNumeric(unknownParameter) : undefined;
       const startTime = performance.now();
       const output = runNewtonCotes({
         expression: fx,
@@ -64,6 +66,7 @@ export const NewtonCotesTab = () => {
         b: parseNumeric(b),
         n: Number(n),
         rules: selectedRules,
+        unknownParameterValue: parsedUnknownParameter,
       });
       const durationMs = performance.now() - startTime;
       setResults(output);
@@ -81,6 +84,7 @@ export const NewtonCotesTab = () => {
     setA('0');
     setB('3.1415926536');
     setN('10');
+    setUnknownParameter('');
     setSelectedRules(['trapecio']);
     setResults([]);
     setElapsedMs(null);
@@ -95,8 +99,14 @@ export const NewtonCotesTab = () => {
     }
     await copyText(
       toCsv(
-        ['regla', 'estimacion', 'valor exacto', 'error'],
-        results.map((item) => [item.rule, item.estimate, item.exact ?? '', item.truncationError ?? ''])
+        ['regla', 'estimacion', 'valor exacto', 'error aproximado', 'error truncamiento teorico'],
+        results.map((item) => [
+          item.rule,
+          item.estimate,
+          item.exact ?? '',
+          item.truncationError ?? '',
+          item.theoreticalTruncationError ?? '',
+        ])
       )
     );
     setMessage('Comparacion copiada en CSV.');
@@ -153,6 +163,17 @@ export const NewtonCotesTab = () => {
           </label>
         </div>
 
+        <label className="block text-sm font-medium text-slate-700">
+          Parametro desconocido (valor en el termino de error)
+          <input
+            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2"
+            value={unknownParameter}
+            onChange={(event) => setUnknownParameter(event.target.value)}
+            placeholder="ej: 1.2 para f''(xi) o f^(4)(xi)"
+          />
+          <FieldHint text="opcional: si lo completa, se calcula error de truncamiento teorico" />
+        </label>
+
         <div className="rounded-lg bg-slate-50 p-3">
           <div className="mb-2 text-sm font-medium text-slate-700">Reglas a aplicar (comparacion multiple)</div>
           <div className="grid grid-cols-2 gap-2">
@@ -205,7 +226,7 @@ export const NewtonCotesTab = () => {
             values={[
               ...results.slice(0, 2).map((item) => ({
                 label: item.rule,
-                value: `${formatNum(item.estimate, 8)} (err: ${item.truncationError ? formatNum(item.truncationError, 6) : 'N/A'})`,
+                value: `${formatNum(item.estimate, 8)} (err aprox: ${item.truncationError ? formatNum(item.truncationError, 6) : 'N/A'}, err teorico: ${item.theoreticalTruncationError ? formatNum(item.theoreticalTruncationError, 6) : 'N/A'})`,
               })),
               { label: 'Tiempo de convergencia', value: elapsedMs !== null ? `${elapsedMs.toFixed(3)} ms` : 'N/A' },
             ]}
@@ -214,12 +235,13 @@ export const NewtonCotesTab = () => {
 
         {results.length > 0 ? (
           <IterationTable
-            headers={['Regla', 'Estimacion', 'Exacta', 'Error truncamiento']}
+            headers={['Regla', 'Estimacion', 'Exacta', 'Error aprox', 'Error truncamiento teorico']}
             rows={results.map((item) => [
               item.rule,
               formatNum(item.estimate, 10),
               typeof item.exact === 'number' ? formatNum(item.exact, 10) : 'N/A',
               typeof item.truncationError === 'number' ? formatNum(item.truncationError, 10) : 'N/A',
+              typeof item.theoreticalTruncationError === 'number' ? formatNum(item.theoreticalTruncationError, 10) : 'N/A',
             ])}
           />
         ) : null}

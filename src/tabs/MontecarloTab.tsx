@@ -19,6 +19,7 @@ export const MontecarloTab = () => {
   const [c, setC] = useState('-1');
   const [d, setD] = useState('1');
   const [n, setN] = useState('5000');
+  const [seed, setSeed] = useState('');
   const [confidence, setConfidence] = useState<'90%' | '95%' | '99%' | '99.7%'>('95%');
   const [result, setResult] = useState<MonteCarloResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +42,7 @@ export const MontecarloTab = () => {
     setC(String(selected.c ?? -1));
     setD(String(selected.d ?? 1));
     setN(String(selected.n));
+    setSeed('');
     setConfidence(selected.confidence);
   };
 
@@ -57,6 +59,7 @@ export const MontecarloTab = () => {
         c: parseNumeric(c),
         d: parseNumeric(d),
         n: Number(n),
+        seed: seed.trim() ? parseNumeric(seed) : undefined,
         confidence,
       });
       const durationMs = performance.now() - startTime;
@@ -89,6 +92,7 @@ export const MontecarloTab = () => {
     setC('-1');
     setD('1');
     setN('5000');
+    setSeed('');
     setConfidence('95%');
     setResult(null);
     setElapsedMs(null);
@@ -103,8 +107,8 @@ export const MontecarloTab = () => {
     }
     await copyText(
       toCsv(
-        ['estimacion', 'std', 'std error', 'ci low', 'ci high'],
-        [[result.estimate, result.stdDev, result.stdError, result.ciLow, result.ciHigh]]
+        ['estimacion', 'media', 'varianza', 'desvio estandar', 'std error', 'ci low', 'ci high'],
+        [[result.estimate, result.mean, result.variance, result.stdDev, result.stdError, result.ciLow, result.ciHigh]]
       )
     );
     setMessage('Resumen copiado en CSV.');
@@ -175,6 +179,14 @@ export const MontecarloTab = () => {
             <FieldHint text="entero alto para menor varianza" />
           </label>
           <label className="block text-sm font-medium text-slate-700">
+            Seed (opcional)
+            <input className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" value={seed} onChange={(event) => setSeed(event.target.value)} />
+            <FieldHint text="mismo seed => mismos puntos aleatorios" />
+          </label>
+        </div>
+
+        <div className="grid grid-cols-1 gap-2">
+          <label className="block text-sm font-medium text-slate-700">
             Confianza
             <select className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2" value={confidence} onChange={(event) => setConfidence(event.target.value as '90%' | '95%' | '99%' | '99.7%')}>
               <option value="90%">90%</option>
@@ -210,6 +222,9 @@ export const MontecarloTab = () => {
             title="Resumen estadistico"
             values={[
               { label: 'Estimacion', value: formatNum(result.estimate, 8) },
+              { label: 'Media', value: formatNum(result.mean, 8) },
+              { label: 'Varianza', value: formatNum(result.variance, 8) },
+              { label: 'Desvio estandar', value: formatNum(result.stdDev, 8) },
               { label: 'Std. error', value: formatNum(result.stdError, 8) },
               { label: 'IC', value: `[${formatNum(result.ciLow, 8)}, ${formatNum(result.ciHigh, 8)}]` },
               { label: 'Tiempo de convergencia', value: elapsedMs !== null ? `${elapsedMs.toFixed(3)} ms` : 'N/A' },

@@ -102,6 +102,8 @@ export interface NewtonCotesRuleResult {
   estimate: number;
   exact?: number;
   truncationError?: number;
+  theoreticalTruncationError?: number;
+  unknownParameterValue?: number;
   nodes: NewtonCotesNodeRecord[];
 }
 
@@ -113,6 +115,8 @@ export interface MonteCarloPoint {
 
 export interface MonteCarloResult {
   estimate: number;
+  mean: number;
+  variance: number;
   stdDev: number;
   stdError: number;
   ciLow: number;
