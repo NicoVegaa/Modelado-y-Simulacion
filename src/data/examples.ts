@@ -180,3 +180,36 @@ export const monteCarloExamples: Example<MonteCarloExampleValue>[] = [
     value: { mode: 'integral-simple', expression: 'sin(x)', a: 0, b: 3.1415926536, n: 10000, confidence: '95%' },
   },
 ];
+
+export interface EDOExampleValue {
+  expression: string;
+  t0: number;
+  y0: number;
+  tf: number;
+  h: number;
+  method?: 'euler' | 'heun' | 'rk4' | 'all';
+}
+
+export const edoExamples: Example<EDOExampleValue>[] = [
+  {
+    label: 'Ej A1: dy/dt = y + t^2, y(0)=1, [0,1], h=0.1',
+    value: { expression: 'y + t^2', t0: 0, y0: 1, tf: 1, h: 0.1, method: 'rk4' },
+  },
+  {
+    label: 'Ej B1: dy/dt = y*sin(t), y(0)=2, [0,pi], h=0.314',
+    value: { expression: 'y*sin(t)', t0: 0, y0: 2, tf: 3.1415926536, h: 0.31415926536, method: 'rk4' },
+  },
+];
+
+export interface Sistemas1DExampleValue {
+  expression: string;
+  xmin: number;
+  xmax: number;
+  samples?: number;
+}
+
+export const sistemas1DExamples: Example<Sistemas1DExampleValue>[] = [
+  { label: 'Ej 1: dx/dt = 2x (crecimiento exponencial)', value: { expression: '2*x', xmin: -5, xmax: 5, samples: 200 } },
+  { label: 'Ej 2: Servidor dx/dt = x*(100-x)', value: { expression: 'x*(100-x)', xmin: -10, xmax: 110, samples: 300 } },
+  { label: 'Ej 3: dx/dt = x^2 - 4 (silla-nodo)', value: { expression: 'x^2 - 4', xmin: -5, xmax: 5, samples: 200 } },
+];

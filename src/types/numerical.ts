@@ -7,6 +7,8 @@ export type TabId =
   | 'dif-finitas'
   | 'newton-cotes'
   | 'montecarlo';
+  | 'edo'
+  | 'sistemas-1d';
 
 export interface BisectionIteration {
   n: number;
@@ -123,6 +125,36 @@ export interface MonteCarloResult {
   ciHigh: number;
   convergence: Array<{ n: number; estimate: number }>;
   points: MonteCarloPoint[];
+}
+
+export interface EDOIterationScalar {
+  n: number;
+  t: number;
+  y: number;
+  yExact?: number;
+  error?: number;
+}
+
+export interface EDOResultScalar {
+  method: 'euler' | 'heun' | 'rk4' | 'all';
+  iterations: EDOIterationScalar[];
+  finalValue: number;
+  finalT: number;
+}
+
+export interface EDOIterationVector {
+  n: number;
+  t: number;
+  y: number[];
+  yExact?: number[];
+  error?: number[];
+}
+
+export interface EDOResultVector {
+  method: 'rk4' | 'euler' | 'heun' | 'all';
+  iterations: EDOIterationVector[];
+  finalValue: number[];
+  finalT: number;
 }
 
 export interface Example<T> {

@@ -7,12 +7,14 @@ const normalizeDecimalCommas = (expression: string): string => {
 };
 
 const normalizeFunctionAliases = (expression: string): string => {
-  return expression.replace(/\b(?:ln|log)\s*\(/gi, 'log(');
+  return expression
+    .replace(/\b(?:ln|Log|Ln)\s*\(/gi, 'log(')
+    .replace(/\braiz\s*\(/gi, 'sqrt(');
 };
 
 export const evaluateExpression = (expression: string, x: number, y?: number): number => {
   const normalized = normalizeFunctionAliases(normalizeDecimalCommas(expression));
-  const scope: { x: number; y?: number } = { x };
+  const scope: { x: number; t: number; y?: number } = { x, t: x };
   if (typeof y === 'number') {
     scope.y = y;
   }

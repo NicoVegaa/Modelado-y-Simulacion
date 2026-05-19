@@ -8,6 +8,8 @@ import { LagrangeTab } from './tabs/LagrangeTab';
 import { DifFinitasTab } from './tabs/DifFinitasTab';
 import { NewtonCotesTab } from './tabs/NewtonCotesTab';
 import { MontecarloTab } from './tabs/MontecarloTab';
+import { EDOTab } from './tabs/EDOTab';
+import { Sistemas1DTab } from './tabs/Sistemas1DTab';
 import type { TabId } from './types/numerical';
 
 const tabs: Array<{ id: TabId; label: string }> = [
@@ -19,6 +21,8 @@ const tabs: Array<{ id: TabId; label: string }> = [
   { id: 'dif-finitas', label: 'Dif. Finitas' },
   { id: 'newton-cotes', label: 'Newton-Cotes' },
   { id: 'montecarlo', label: 'Montecarlo' },
+  { id: 'edo', label: 'EDO (Euler/Heun/RK4)' },
+  { id: 'sistemas-1d', label: 'Sistemas Autónomos 1D' },
 ];
 
 const renderTab = (tab: TabId) => {
@@ -39,6 +43,10 @@ const renderTab = (tab: TabId) => {
       return <NewtonCotesTab />;
     case 'montecarlo':
       return <MontecarloTab />;
+    case 'edo':
+      return <EDOTab />;
+    case 'sistemas-1d':
+      return <Sistemas1DTab />;
     default:
       return null;
   }
